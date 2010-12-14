@@ -25,37 +25,34 @@ class MemcachedCodec(maxFrameLength: Int) extends Codec {
   }
 
   class Decoder extends FrameDecoder {
-    def decode(p1: ChannelHandlerContext, p2: Channel, p3: ChannelBuffer) = {
+    override def decode(ctx: ChannelHandlerContext, channel: Channel, buffer: ChannelBuffer): Command = {
+      val message = super.decode(ctx, channel, buffer).asInstanceOf[ChannelBuffer]
+      if (message ne null) {
+        val string = message.toString(CharsetUtil.US_ASCII)
+        val tokens = string.split(" ")
+        val args = tokens.drop(1)
+        val commandName = tokens.head
+        println(commandName)
+        val makeCommand = Command(commandName)(_)
 
-    }
-
-    override def decode(ctx: ChannelHandlerContext, e: MessageEvent) {
-      val message = e.getMessage
-      message match {
-        case message: ChannelBuffer =>
-          val string = message.toString(CharsetUtil.US_ASCII)
-          val tokens = string.split(" ")
-          val args = tokens.drop(1)
-          val commandName = tokens.head
-          println(commandName)
-          val makeCommand = Command(commandName)(_)
-
-          if (Command.isStorageCommand(commandName)) {
-            val length = args(3).toInt
-            ctx.getPipeline.addAfter("decode", "extractData", new FixedLengthFrameDecoder(length))
-            ctx.getPipeline.addAfter("extractData", "reset", new SimpleChannelUpstreamHandler {
-              override def messageReceived(ctx: ChannelHandlerContext, e: MessageEvent) {
-                ctx.getPipeline.remove("extractData")
-                ctx.getPipeline.remove(this)
-                val key = tokens(1)
-                val data = e.getMessage.asInstanceOf[ChannelBuffer].toString(CharsetUtil.UTF_8)
-                val command = makeCommand(Seq(key, data))
-                Channels.fireMessageReceived(ctx, command)
-              }
-            })
-          } else {
-            Channels.fireMessageReceived(ctx, makeCommand(args))
-          }
+        if (Command.isStorageCommand(commandName)) {
+          val length = args(3).toInt
+          ctx.getPipeline.addAfter("decode", "extractData", new FixedLengthFrameDecoder(length))
+          ctx.getPipeline.remove("decode")
+          ctx.getPipeline.addAfter("extractData", "reset", new SimpleChannelUpstreamHandler {
+            override def messageReceived(ctx: ChannelHandlerContext, e: MessageEvent) {
+              ctx.getPipeline.addBefore("extractData", "decode", Decoder.this)
+              ctx.getPipeline.remove("extractData")
+              ctx.getPipeline.remove(this)
+              val key = tokens(1)
+              val data = e.getMessage.asInstanceOf[ChannelBuffer].toString(CharsetUtil.UTF_8)
+              val command = makeCommand(Seq(key, data))
+              Channels.fireMessageReceived(ctx, command)
+            }
+          })
+        } else {
+          Channels.fireMessageReceived(ctx, makeCommand(args))
+        }
       }
     }
   }
@@ -65,8 +62,6 @@ class MemcachedCodec(maxFrameLength: Int) extends Codec {
       def getPipeline() = {
         val pipeline = Channels.pipeline()
 
-        pipeline.addLast("command",
-          new DelimiterBasedFrameDecoder(maxFrameLength, DELIMETER))
         pipeline.addLast("decode", new Decoder)
         pipeline.addLast("encoder", Encoder)
         pipeline
