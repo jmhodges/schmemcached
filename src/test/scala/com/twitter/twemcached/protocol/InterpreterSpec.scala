@@ -2,7 +2,7 @@ package com.twitter.twemcached.protocol
 
 import org.specs.Specification
 import com.twitter.util.MapMaker
-import com.twitter.twemcached.com.twitter.twemcached.Interpreter
+import com.twitter.twemcached.Interpreter
 
 class InterpreterSpec extends Specification {
   "Interpreter" should {

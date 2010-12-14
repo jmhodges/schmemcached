@@ -4,8 +4,9 @@ import org.jboss.netty.handler.codec.frame.{Delimiters, DelimiterBasedFrameDecod
 import org.jboss.netty.handler.codec.oneone.{OneToOneEncoder, OneToOneDecoder}
 import org.jboss.netty.channel.{Channel, ChannelHandlerContext, Channels, ChannelPipelineFactory}
 import protocol.{Command, ServerError}
+import com.twitter.finagle.builder.Codec
 
-class MemcachedCodec(maxFrameLength: Int) {
+class MemcachedCodec(maxFrameLength: Int) extends Codec {
   class PipelineError extends ServerError("Handler not correctly wired in the pipeline")
 
   object Decoder extends OneToOneDecoder {

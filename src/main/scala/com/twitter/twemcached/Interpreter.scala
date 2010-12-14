@@ -1,5 +1,4 @@
 package com.twitter.twemcached
-package com.twitter.twemcached
 
 import protocol._
 import scala.collection.mutable
