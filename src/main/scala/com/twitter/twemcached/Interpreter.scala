@@ -67,12 +67,10 @@ class Interpreter(map: mutable.Map[String, String]) {
         }
       case Get(keys)            =>
         Values(
-          keys map { key =>
-            Value(key, map.get(key).getOrElse(""))
+          keys flatMap { key =>
+            map.get(key) map(Value(key, _))
           }
         ).toString
-      case g @ Gets(_)          =>
-        apply(g)
       case Delete(key)  =>
         if (map.remove(key).isDefined)
           DELETED

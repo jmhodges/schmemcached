@@ -1,29 +1,17 @@
 package com.twitter.twemcached
 
-import org.jboss.netty.handler.codec.frame.{Delimiters, DelimiterBasedFrameDecoder}
 import org.jboss.netty.handler.codec.oneone.{OneToOneEncoder, OneToOneDecoder}
-import org.jboss.netty.channel.{Channel, ChannelHandlerContext, Channels, ChannelPipelineFactory}
-import protocol.{Command, ServerError}
 import com.twitter.finagle.builder.Codec
 import org.jboss.netty.buffer.{ChannelBuffer, ChannelBuffers}
 import org.jboss.netty.util.CharsetUtil
+import org.jboss.netty.channel._
+import org.jboss.netty.handler.codec.frame.{FixedLengthFrameDecoder, FrameDecoder, Delimiters, DelimiterBasedFrameDecoder}
+import protocol._
 
 class MemcachedCodec(maxFrameLength: Int) extends Codec {
   class PipelineError extends ServerError("Handler not correctly wired in the pipeline")
 
   private[this] val DELIMETER = ChannelBuffers.wrappedBuffer("\r\n".getBytes)
-
-  object Decoder extends OneToOneDecoder {
-    def decode(context: ChannelHandlerContext, channel: Channel, message: AnyRef): Command = {
-      message match {
-        case message: ChannelBuffer =>
-          val command = Command(message.toString(CharsetUtil.US_ASCII))
-          command
-        case _ =>
-          throw new PipelineError
-      }
-    }
-  }
 
   object Encoder extends OneToOneEncoder {
     def encode(context: ChannelHandlerContext, channel: Channel, message: AnyRef) = {
@@ -36,15 +24,51 @@ class MemcachedCodec(maxFrameLength: Int) extends Codec {
     }
   }
 
+  class Decoder extends FrameDecoder {
+    def decode(p1: ChannelHandlerContext, p2: Channel, p3: ChannelBuffer) = {
+
+    }
+
+    override def decode(ctx: ChannelHandlerContext, e: MessageEvent) {
+      val message = e.getMessage
+      message match {
+        case message: ChannelBuffer =>
+          val string = message.toString(CharsetUtil.US_ASCII)
+          val tokens = string.split(" ")
+          val args = tokens.drop(1)
+          val commandName = tokens.head
+          println(commandName)
+          val makeCommand = Command(commandName)(_)
+
+          if (Command.isStorageCommand(commandName)) {
+            val length = args(3).toInt
+            ctx.getPipeline.addAfter("decode", "extractData", new FixedLengthFrameDecoder(length))
+            ctx.getPipeline.addAfter("extractData", "reset", new SimpleChannelUpstreamHandler {
+              override def messageReceived(ctx: ChannelHandlerContext, e: MessageEvent) {
+                ctx.getPipeline.remove("extractData")
+                ctx.getPipeline.remove(this)
+                val key = tokens(1)
+                val data = e.getMessage.asInstanceOf[ChannelBuffer].toString(CharsetUtil.UTF_8)
+                val command = makeCommand(Seq(key, data))
+                Channels.fireMessageReceived(ctx, command)
+              }
+            })
+          } else {
+            Channels.fireMessageReceived(ctx, makeCommand(args))
+          }
+      }
+    }
+  }
+
   val serverPipelineFactory = {
     new ChannelPipelineFactory {
       def getPipeline() = {
         val pipeline = Channels.pipeline()
 
-        pipeline.addLast("frame",
+        pipeline.addLast("command",
           new DelimiterBasedFrameDecoder(maxFrameLength, DELIMETER))
+        pipeline.addLast("decode", new Decoder)
         pipeline.addLast("encoder", Encoder)
-        pipeline.addLast("decode", Decoder)
         pipeline
       }
     }
