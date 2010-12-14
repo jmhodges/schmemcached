@@ -8,4 +8,3 @@ class InterpreterService(interpreter: Interpreter) extends Service[Command, Stri
   def apply(command: Command) =
     Future(interpreter(command))
 }
-
