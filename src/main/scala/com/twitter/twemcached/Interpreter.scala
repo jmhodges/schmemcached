@@ -6,8 +6,17 @@ import org.jboss.netty.buffer.ChannelBuffer
 import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
 import org.jboss.netty.util.CharsetUtil
 
-class Interpreter(data: mutable.Map[String, ChannelBuffer]) {
+class Interpreter(data: mutable.Map[String, ChannelBuffer], concurrencyLevel: Int = 16) {
   private[this] val DIGITS     = "^\\d+$"
+  private[this] val stripes    = {
+    val stripes = new Array[AnyRef](concurrencyLevel)
+    (0 until concurrencyLevel) foreach { i =>
+      stripes(i) = new {}
+    }
+    stripes
+
+
+  }
 
   def apply(command: Command): Response = {
     command match {
@@ -15,7 +24,7 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer]) {
         data(key) = value
         Stored()
       case Add(key, value)      =>
-        synchronized {
+        stripe(key).synchronized {
           val existing = data.get(key)
           if (existing.isDefined)
             NotStored()
@@ -25,7 +34,7 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer]) {
           }
         }
       case Replace(key, value)  =>
-        synchronized {
+        stripe(key).synchronized {
           val existing = data.get(key)
           if (existing.isDefined) {
             data(key) = value
@@ -35,7 +44,7 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer]) {
           }
         }
       case Append(key, value)   =>
-        synchronized {
+        stripe(key).synchronized {
           val existing = data.get(key)
           if (existing.isDefined) {
             data(key) = wrappedBuffer(value, existing.get)
@@ -45,7 +54,7 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer]) {
           }
         }
       case Prepend(key, value)  =>
-        synchronized {
+        stripe(key).synchronized {
           val existing = data.get(key)
           if (existing.isDefined) {
             data(key) = wrappedBuffer(existing.get, value)
@@ -66,7 +75,7 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer]) {
         else
           NotStored()
       case Incr(key, value)     =>
-        synchronized {
+        stripe(key).synchronized {
           val existing = data.get(key)
           if (existing.isDefined) {
             data(key) = {
@@ -85,4 +94,6 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer]) {
         apply(Incr(key, -value))
     }
   }
+
+  @inline private[this] def stripe(key: String) = stripes(key.hashCode % stripes.length)
 }
