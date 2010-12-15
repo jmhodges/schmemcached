@@ -41,18 +41,12 @@ object Parse {
     val commandName = tokens.head
     val args = tokens.tail
     commandName match {
-      case "set"     =>
-        Set(validateStorageCommand(args), data)
-      case "add"     =>
-        Add(validateStorageCommand(args), data)
-      case "replace" =>
-        Replace(validateStorageCommand(args), data)
-      case "append"  =>
-        Append(validateStorageCommand(args), data)
-      case "prepend" =>
-        Prepend(validateStorageCommand(args), data)
-      case _         =>
-        throw new NonexistentCommand(commandName)
+      case "set"     => Set(validateStorageCommand(args), data)
+      case "add"     => Add(validateStorageCommand(args), data)
+      case "replace" => Replace(validateStorageCommand(args), data)
+      case "append"  => Append(validateStorageCommand(args), data)
+      case "prepend" => Prepend(validateStorageCommand(args), data)
+      case _         => throw new NonexistentCommand(commandName)
     }
   }
 
@@ -60,52 +54,36 @@ object Parse {
     val commandName = tokens.head
     val args = tokens.tail
     commandName match {
-      case "get"     =>
-        Get(args)
-      case "gets"    =>
-        Get(args)
-      case "delete"  =>
-        Delete(validateDeleteCommand(args))
-      case "incr"    =>
-        tupled(Incr)(validateArithmeticCommand(args))
-      case "decr"    =>
-        tupled(Decr)(validateArithmeticCommand(args))
-      case _         =>
-        throw new NonexistentCommand(commandName)
+      case "get"     => Get(args)
+      case "gets"    => Get(args)
+      case "delete"  => Delete(validateDeleteCommand(args))
+      case "incr"    => tupled(Incr)(validateArithmeticCommand(args))
+      case "decr"    => tupled(Decr)(validateArithmeticCommand(args))
+      case _         => throw new NonexistentCommand(commandName)
     }
   }
 
   private[this] def validateStorageCommand(tokens: Seq[String]) = {
-    if (tokens.size < 4)
-      throw new ClientError("Too few arguments")
-    if (tokens.size == 5 && tokens(4) != NOREPLY)
-      throw new ClientError("Too many arguments")
-    if (tokens.size > 5)
-      throw new ClientError("Too many arguments")
-    if (!tokens(3).matches(DIGITS))
-      throw new ClientError("Bad frame length")
+    if (tokens.size < 4) throw new ClientError("Too few arguments")
+    if (tokens.size == 5 && tokens(4) != NOREPLY) throw new ClientError("Too many arguments")
+    if (tokens.size > 5) throw new ClientError("Too many arguments")
+    if (!tokens(3).matches(DIGITS)) throw new ClientError("Bad frame length")
 
     tokens.head
   }
 
   private[this] def validateArithmeticCommand(tokens: Seq[String]) = {
-    if (tokens.size < 2)
-      throw new ClientError("Too few arguments")
-    if (tokens.size == 3 && tokens.last != NOREPLY)
-      throw new ClientError("Too many arguments")
-    if (!tokens(1).matches(Parse.DIGITS))
-      throw new ClientError("Delta is not a number")
+    if (tokens.size < 2) throw new ClientError("Too few arguments")
+    if (tokens.size == 3 && tokens.last != NOREPLY) throw new ClientError("Too many arguments")
+    if (!tokens(1).matches(Parse.DIGITS)) throw new ClientError("Delta is not a number")
 
     (tokens.head, tokens(1).toInt)
   }
 
   private[this] def validateDeleteCommand(tokens: Seq[String]) = {
-    if (tokens.size < 1)
-      throw new ClientError("No key")
-    if (tokens.size == 2 && !tokens.last.matches(Parse.DIGITS))
-      throw new ClientError("Timestamp is poorly formed")
-    if (tokens.size > 2)
-      throw new ClientError("Too many arguments")
+    if (tokens.size < 1) throw new ClientError("No key")
+    if (tokens.size == 2 && !tokens.last.matches(Parse.DIGITS)) throw new ClientError("Timestamp is poorly formed")
+    if (tokens.size > 2) throw new ClientError("Too many arguments")
 
     tokens.head
   }

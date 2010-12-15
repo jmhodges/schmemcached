@@ -16,12 +16,9 @@ object Show {
 
   def apply(response: Response) = {
     response match {
-      case Stored() =>
-        STORED
-      case NotStored() =>
-        NOT_STORED
-      case Deleted() =>
-        DELETED
+      case Stored()       => STORED
+      case NotStored()    => NOT_STORED
+      case Deleted()      => DELETED
       case Values(values) =>
         val shown = values map { case Value(key, value) =>
           wrappedBuffer(
