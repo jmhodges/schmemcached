@@ -11,9 +11,9 @@ class InterpreterSpec extends Specification {
     val interpreter = new Interpreter(map)
 
     "set & get" in {
-      interpreter(Set("foo", ChannelBuffers.wrappedBuffer("bar".getBytes)))
-      interpreter(Get(Seq("foo"))) mustEqual
-        ChannelBuffers.wrappedBuffer("VALUE foo 0 3\r\nbar\r\nEND\r\n".getBytes)
+      val bar = ChannelBuffers.wrappedBuffer("bar".getBytes)
+      interpreter(Set("foo", bar))
+      interpreter(Get(Seq("foo"))) mustEqual Values(Seq(Value("foo", bar)))
     }
   }
 }

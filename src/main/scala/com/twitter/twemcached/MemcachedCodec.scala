@@ -7,6 +7,7 @@ import org.jboss.netty.handler.codec.frame.FrameDecoder
 import protocol._
 import com.twitter.util.StateMachine
 import org.jboss.netty.buffer.{ChannelBufferIndexFinder, ChannelBuffer, ChannelBuffers}
+import text.{Parse, Show}
 
 class MemcachedCodec(maxFrameLength: Int) extends Codec {
   class PipelineError extends ServerError("Handler not correctly wired in the pipeline")
@@ -14,8 +15,11 @@ class MemcachedCodec(maxFrameLength: Int) extends Codec {
   private[this] val DELIMETER = ChannelBuffers.wrappedBuffer("\r\n".getBytes)
 
   object Encoder extends OneToOneEncoder {
-    def encode(context: ChannelHandlerContext, channel: Channel, message: AnyRef) =
-      message
+    def encode(context: ChannelHandlerContext, channel: Channel, message: AnyRef) = {
+      message match {
+        case response: Response => Show(response)
+      }
+    }
   }
 
   class Decoder extends SimpleChannelUpstreamHandler with StateMachine {
@@ -39,15 +43,15 @@ class MemcachedCodec(maxFrameLength: Int) extends Codec {
 
       state match {
         case AwaitingCommand() =>
-          val tokens = Command.tokenize(data)
-          val bytesNeeded = Command.needsData(tokens)
+          val tokens = Parse.tokenize(data)
+          val bytesNeeded = Parse.needsData(tokens)
           if (bytesNeeded.isDefined) {
             awaitData(tokens, bytesNeeded.get)
           } else {
-            Channels.fireMessageReceived(ctx, Command.parse(tokens))
+            Channels.fireMessageReceived(ctx, Parse.parse(tokens))
           }
         case AwaitingData(tokens) =>
-          Channels.fireMessageReceived(ctx, Command.parse(tokens, data))
+          Channels.fireMessageReceived(ctx, Parse(tokens, data))
           pipeline.remove("decodeData")
           awaitCommand()
       }
@@ -78,7 +82,6 @@ class MemcachedCodec(maxFrameLength: Int) extends Codec {
 
   class DecodeData(bytesNeeded: Int, decoder: Decoder) extends FrameDecoder {
     def decode(ctx: ChannelHandlerContext, channel: Channel, buffer: ChannelBuffer): ChannelBuffer = {
-      println("awaiting data", buffer.readableBytes, bytesNeeded)
       if (buffer.readableBytes < bytesNeeded + DELIMETER.capacity) return null
       val lastTwoBytesInFrame = buffer.slice(bytesNeeded + buffer.readerIndex, DELIMETER.capacity)
 
