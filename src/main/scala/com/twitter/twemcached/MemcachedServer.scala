@@ -6,6 +6,7 @@ import com.twitter.util.MapMaker
 import com.twitter.util.StorageUnitConversions._
 import java.net.InetSocketAddress
 import org.jboss.netty.buffer.ChannelBuffer
+import protocol.text.FinagleCodec
 
 class MemcachedServer(port: Int) {
   private[this] val map = MapMaker[String, ChannelBuffer](_.softValues)
@@ -15,7 +16,7 @@ class MemcachedServer(port: Int) {
   private[this] val serverSpec =
     ServerBuilder()
       .name("twemcached")
-      .codec(new MemcachedCodec(1.megabyte.inBytes.toInt))
+      .codec(new FinagleCodec(1.megabyte))
       .service(service)
       .bindTo(new InetSocketAddress(port))
 

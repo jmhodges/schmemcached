@@ -11,8 +11,8 @@ object Show {
   private[this] val EXISTS     = wrappedBuffer("EXISTS".getBytes    , DELIMETER)
   private[this] val NOT_FOUND  = wrappedBuffer("NOT_FOUND".getBytes , DELIMETER)
   private[this] val DELETED    = wrappedBuffer("DELETED".getBytes   , DELIMETER)
-  val VALUE = "VALUE ".getBytes
-  val ZERO = " 0 ".getBytes
+  private[this] val VALUE      = "VALUE ".getBytes
+  private[this] val ZERO       = " 0 ".getBytes
 
   def apply(response: Response) = {
     response match {

@@ -8,8 +8,8 @@ import org.jboss.netty.util.CharsetUtil
 
 class Interpreter(data: mutable.Map[String, ChannelBuffer], concurrencyLevel: Int = 16) {
   private[this] val DIGITS     = "^\\d+$"
-  class Lock
   private[this] val stripes    = {
+    class Lock
     val array = new Array[AnyRef](concurrencyLevel)
     (0 until concurrencyLevel) foreach { i =>
       array(i) = new Lock
