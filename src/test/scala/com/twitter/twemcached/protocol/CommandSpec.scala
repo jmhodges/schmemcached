@@ -1,11 +1,13 @@
 package com.twitter.twemcached.protocol
 
 import org.specs.Specification
+import org.jboss.netty.buffer.ChannelBuffers
 
 class CommandSpec extends Specification {
   "Command" should {
     "parse storage commands" in {
-      Command("add")(Seq("foo", "0", "0", "3", "bar")) mustEqual Add("foo", "bar")
+      val buffer = ChannelBuffers.wrappedBuffer("bar".getBytes)
+      Command.parse(Seq("add", "foo", "0", "0", "3"), buffer) mustEqual Add("foo", buffer)
     }
   }
 }

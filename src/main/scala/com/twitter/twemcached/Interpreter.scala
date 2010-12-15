@@ -2,44 +2,53 @@ package com.twitter.twemcached
 
 import protocol._
 import scala.collection.mutable
+import org.jboss.netty.buffer.ChannelBuffer
+import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
+import org.jboss.netty.util.CharsetUtil
 
-class Interpreter(map: mutable.Map[String, String]) {
+class Interpreter(data: mutable.Map[String, ChannelBuffer]) {
   private[this] val DIGITS     = "^\\d+$"
-  private[this] val DELIMETER  = "\r\n"
-  private[this] val END        = "END"       + DELIMETER
-  private[this] val STORED     = "STORED"    + DELIMETER
-  private[this] val NOT_STORED = "STORED"    + DELIMETER
-  private[this] val EXISTS     = "EXISTS"    + DELIMETER
-  private[this] val NOT_FOUND  = "NOT_FOUND" + DELIMETER
-  private[this] val DELETED    = "DELETED" + DELIMETER
+  private[this] val DELIMETER  = "\r\n".getBytes
+  private[this] val END        = wrappedBuffer("END".getBytes       , DELIMETER)
+  private[this] val STORED     = wrappedBuffer("STORED".getBytes    , DELIMETER)
+  private[this] val NOT_STORED = wrappedBuffer("STORED".getBytes    , DELIMETER)
+  private[this] val EXISTS     = wrappedBuffer("EXISTS".getBytes    , DELIMETER)
+  private[this] val NOT_FOUND  = wrappedBuffer("NOT_FOUND".getBytes , DELIMETER)
+  private[this] val DELETED    = wrappedBuffer("DELETED".getBytes   , DELIMETER)
 
-  private[this] case class Value(key: String, value: String) {
-    override def toString = "VALUE " + key + " 0 " + value.length + DELIMETER + value + DELIMETER
+  private[this] case class Value(key: String, value: ChannelBuffer) {
+    val VALUE = "VALUE ".getBytes
+    val ZERO = " 0 ".getBytes
+
+    def toMessage = wrappedBuffer(
+      wrappedBuffer(VALUE, key.getBytes, ZERO, value.capacity.toString.getBytes, DELIMETER),
+      value,
+      wrappedBuffer(DELIMETER))
   }
   private[this] case class Values(values: Seq[Value]) {
-    override def toString = values.mkString + END
+    def toMessage = wrappedBuffer(wrappedBuffer(values.map(_.toMessage): _*), END)
   }
 
-  def apply(command: Command): String = {
+  def apply(command: Command): ChannelBuffer = {
     command match {
       case Set(key, value)      =>
-        map(key) = value
+        data(key) = value
         STORED
       case Add(key, value)      =>
         synchronized {
-          val existing = map.get(key)
+          val existing = data.get(key)
           if (existing.isDefined)
             NOT_STORED
           else {
-            map(key) = value
+            data(key) = value
             STORED
           }
         }
       case Replace(key, value)  =>
         synchronized {
-          val existing = map.get(key)
+          val existing = data.get(key)
           if (existing.isDefined) {
-            map(key) = value
+            data(key) = value
             STORED
           } else {
             NOT_STORED
@@ -47,9 +56,9 @@ class Interpreter(map: mutable.Map[String, String]) {
         }
       case Append(key, value)   =>
         synchronized {
-          val existing = map.get(key)
+          val existing = data.get(key)
           if (existing.isDefined) {
-            map(key) = value + existing.get
+            data(key) = wrappedBuffer(value, existing.get)
             STORED
           } else {
             NOT_STORED
@@ -57,9 +66,9 @@ class Interpreter(map: mutable.Map[String, String]) {
         }
       case Prepend(key, value)  =>
         synchronized {
-          val existing = map.get(key)
+          val existing = data.get(key)
           if (existing.isDefined) {
-            map(key) = existing.get + value
+            data(key) = wrappedBuffer(existing.get, value)
             STORED
           } else {
             NOT_STORED
@@ -68,23 +77,25 @@ class Interpreter(map: mutable.Map[String, String]) {
       case Get(keys)            =>
         Values(
           keys flatMap { key =>
-            map.get(key) map(Value(key, _))
+            data.get(key) map(Value(key, _))
           }
-        ).toString
+        ).toMessage
       case Delete(key)  =>
-        if (map.remove(key).isDefined)
+        if (data.remove(key).isDefined)
           DELETED
         else
           NOT_STORED
       case Incr(key, value)     =>
         synchronized {
-          val existing = map.get(key)
+          val existing = data.get(key)
           if (existing.isDefined) {
-            map(key) =
-              if (existing.get.matches(DIGITS))
-                (existing.get.toInt + value).toString
+            data(key) = {
+              val existingString = existing.get.toString(CharsetUtil.US_ASCII)
+              if (existingString.matches(DIGITS))
+                wrappedBuffer((existingString.toInt + value).toString.getBytes)
               else
-                value.toString
+                wrappedBuffer(value.toString.getBytes)
+            }
             STORED
           } else {
             NOT_STORED

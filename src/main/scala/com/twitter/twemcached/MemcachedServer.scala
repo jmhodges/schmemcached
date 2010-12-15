@@ -5,9 +5,10 @@ import com.twitter.finagle.builder.ServerBuilder
 import com.twitter.util.MapMaker
 import com.twitter.util.StorageUnitConversions._
 import java.net.InetSocketAddress
+import org.jboss.netty.buffer.ChannelBuffer
 
 class MemcachedServer(port: Int) {
-  private[this] val map = MapMaker[String, String](_.softValues)
+  private[this] val map = MapMaker[String, ChannelBuffer](_.softValues)
   private[this] val interpreter = new Interpreter(map)
   private[this] val service = new InterpreterService(interpreter)
 
