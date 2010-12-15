@@ -7,19 +7,24 @@ import collection.mutable.ArrayBuffer
 
 object Command {
   val DIGITS = "^\\d+$"
-  val NOREPLY = "noreply"
+  private[this] val NOREPLY = "noreply"
   private[this] val storageCommands = collection.Set("set", "add", "replace", "append", "prepend")
+  private[this] val SKIP_SPACE = 1
 
   def tokenize(_buffer: ChannelBuffer) = {
     val tokens = new ArrayBuffer[String]
     var buffer = _buffer
     while (buffer.capacity > 0) {
-      var tokenLength = buffer.bytesBefore(ChannelBufferIndexFinder.LINEAR_WHITESPACE)
-      if (tokenLength < 0) tokenLength = buffer.capacity
-
-      tokens += buffer.slice(0, tokenLength).toString(CharsetUtil.US_ASCII)
-      buffer = buffer.slice(tokenLength, buffer.capacity)
+      val tokenLength = buffer.bytesBefore(ChannelBufferIndexFinder.LINEAR_WHITESPACE)
+      if (tokenLength < 0) {
+        tokens += buffer.toString(CharsetUtil.US_ASCII)
+        buffer = buffer.slice(0, 0)
+      } else {
+        tokens += buffer.slice(0, tokenLength).toString(CharsetUtil.US_ASCII)
+        buffer = buffer.slice(tokenLength + SKIP_SPACE, buffer.capacity - tokenLength - SKIP_SPACE)
+      }
     }
+    println(tokens)
     tokens
   }
 
@@ -28,7 +33,7 @@ object Command {
     val args = tokens.tail
     if (storageCommands.contains(commandName)) {
       validateStorageCommand(args)
-      Some(tokens(3).toInt)
+      Some(tokens(4).toInt)
     } else None
   }
 

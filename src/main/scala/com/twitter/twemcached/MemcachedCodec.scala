@@ -30,6 +30,7 @@ class MemcachedCodec(maxFrameLength: Int) extends Codec {
     }
 
     override def exceptionCaught(ctx: ChannelHandlerContext, e: ExceptionEvent) {
+      e.getCause.printStackTrace()
       awaitCommand()
     }
 
@@ -40,28 +41,27 @@ class MemcachedCodec(maxFrameLength: Int) extends Codec {
         case AwaitingCommand() =>
           val tokens = Command.tokenize(data)
           val bytesNeeded = Command.needsData(tokens)
-          if (bytesNeeded.isDefined)
+          if (bytesNeeded.isDefined) {
             awaitData(tokens, bytesNeeded.get)
-          else {
-            awaitCommand()
+          } else {
             Channels.fireMessageReceived(ctx, Command.parse(tokens))
           }
         case AwaitingData(tokens) =>
           Channels.fireMessageReceived(ctx, Command.parse(tokens, data))
+          pipeline.remove("decodeData")
           awaitCommand()
       }
     }
 
     private[this] def awaitData(tokens: Seq[String], bytesNeeded: Int) {
       state = AwaitingData(tokens)
-      pipeline.addBefore("decoder", "decodeData", new DecodeData(bytesNeeded, this))
       pipeline.remove("decodeCommand")
+      pipeline.addBefore("decoder", "decodeData", new DecodeData(bytesNeeded, this))
     }
 
     private[this] def awaitCommand() {
       state = AwaitingCommand()
       pipeline.addBefore("decoder", "decodeCommand", new DecodeCommand(this))
-      pipeline.remove("decodeCommand")
     }
   }
 
@@ -78,6 +78,7 @@ class MemcachedCodec(maxFrameLength: Int) extends Codec {
 
   class DecodeData(bytesNeeded: Int, decoder: Decoder) extends FrameDecoder {
     def decode(ctx: ChannelHandlerContext, channel: Channel, buffer: ChannelBuffer): ChannelBuffer = {
+      println("awaiting data", buffer.readableBytes, bytesNeeded)
       if (buffer.readableBytes < bytesNeeded + DELIMETER.capacity) return null
       val lastTwoBytesInFrame = buffer.slice(bytesNeeded + buffer.readerIndex, DELIMETER.capacity)
 
