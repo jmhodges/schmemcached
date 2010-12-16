@@ -9,7 +9,7 @@ object ShowSpec extends Specification {
   "Show" should {
     "show commands" in {
       val value = wrappedBuffer("value".getBytes)
-      Show(Add("key", value)) mustEqual wrappedBuffer("add key 0 0 5\r\nvalue".getBytes)
+      Show(Add("key", value)) mustEqual wrappedBuffer("add key 0 0 5\r\nvalue\r\n".getBytes)
     }
   }
 }

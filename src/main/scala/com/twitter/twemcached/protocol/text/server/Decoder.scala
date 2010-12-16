@@ -2,9 +2,10 @@ package com.twitter.twemcached.protocol.text.server
 
 import org.jboss.netty.channel._
 import com.twitter.util.StateMachine
-import org.jboss.netty.buffer.ChannelBuffer
 import com.twitter.twemcached.protocol.text.{AbstractDecoder, ParseCommand}
 import com.twitter.twemcached.protocol.Command
+import org.jboss.netty.util.CharsetUtil
+import org.jboss.netty.buffer.{ChannelBuffers, ChannelBuffer}
 
 class Decoder extends AbstractDecoder with StateMachine {
   case class AwaitingCommand() extends State
@@ -26,30 +27,32 @@ class Decoder extends AbstractDecoder with StateMachine {
     state match {
       case AwaitingCommand() =>
         val line = decodeLine(buffer)
-        if (line eq null) return null
-
-        val tokens = ParseCommand.tokenize(buffer)
-        val bytesNeeded = ParseCommand.needsData(tokens)
-        if (bytesNeeded.isDefined) {
-          awaitData(tokens, bytesNeeded.get)
-          null
-        } else {
-          ParseCommand.parse(tokens)
-        }
+        if (line.isDefined) {
+          val tokens = ParseCommand.tokenize(line.get)
+          val bytesNeeded = ParseCommand.needsData(tokens)
+          if (bytesNeeded.isDefined) {
+            awaitData(tokens, bytesNeeded.get)
+          } else {
+            ParseCommand.parse(tokens)
+          }
+        } else needMoreData
       case AwaitingData(tokens, bytesNeeded) =>
         val data = decodeData(bytesNeeded, buffer)
-        if (data eq null) return null
-
-        awaitCommand()
-        ParseCommand(tokens, buffer)
+        if (data.isDefined) {
+          awaitCommand()
+          ParseCommand(tokens, ChannelBuffers.copiedBuffer(data.get))
+        } else needMoreData
     }
   }
 
-  private[this] def awaitData(tokens: Seq[String], bytesNeeded: Int) {
+  private[this] def awaitData(tokens: Seq[String], bytesNeeded: Int) = {
     state = AwaitingData(tokens, bytesNeeded)
+    needMoreData
   }
 
   private[this] def awaitCommand() {
     state = AwaitingCommand()
   }
+
+  private[this] val needMoreData: Command = null
 }

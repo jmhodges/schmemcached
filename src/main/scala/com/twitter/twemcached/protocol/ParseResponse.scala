@@ -5,7 +5,7 @@ import org.jboss.netty.buffer.ChannelBuffer
 
 object ParseResponse extends Parser {
   case class ValueLine(tokens: Seq[String], buffer: ChannelBuffer) {
-    val toValue = Value(tokens.head, buffer)
+    val toValue = Value(tokens(1), buffer)
   }
   private[this] val VALUE      = "VALUE"
   private[this] val STORED     = "STORED"

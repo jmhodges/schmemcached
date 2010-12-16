@@ -60,19 +60,19 @@ object Show {
         wrappedBuffer(wrappedBuffer(GET, SPACE),
           wrappedBuffer(keys.map { key =>
             wrappedBuffer(key.getBytes, SPACE)
-          }: _*))
+          }: _*), wrappedBuffer(DELIMETER))
       case Incr(key, amount) =>
-        wrappedBuffer(INCR, SPACE, amount.toString.getBytes)
+        wrappedBuffer(INCR, SPACE, amount.toString.getBytes, DELIMETER)
       case Decr(key, amount) =>
-        wrappedBuffer(DECR, SPACE, amount.toString.getBytes)
+        wrappedBuffer(DECR, SPACE, amount.toString.getBytes, DELIMETER)
       case Delete(key) =>
-        wrappedBuffer(DELETE, SPACE, key.getBytes)
+        wrappedBuffer(DELETE, SPACE, key.getBytes, DELIMETER)
     }
   }
 
   @inline private[this] def showStorageCommand(name: Array[Byte], key: String, value: ChannelBuffer) = {
     wrappedBuffer(
       wrappedBuffer(name, SPACE, key.getBytes, SPACE, ZERO, SPACE, ZERO, SPACE, value.capacity.toString.getBytes, DELIMETER),
-      value)
+      value, wrappedBuffer(DELIMETER))
   }
 }

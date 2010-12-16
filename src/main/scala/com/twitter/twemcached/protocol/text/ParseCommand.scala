@@ -1,12 +1,8 @@
 package com.twitter.twemcached.protocol.text
 
 import scala.Function.tupled
-import org.jboss.netty.buffer.{ChannelBufferIndexFinder, ChannelBuffer}
-import org.jboss.netty.util.CharsetUtil
-import collection.mutable.ArrayBuffer
+import org.jboss.netty.buffer.ChannelBuffer
 import com.twitter.twemcached.protocol._
-
-
 
 object ParseCommand extends Parser {
   private[this] val NOREPLY = "noreply"

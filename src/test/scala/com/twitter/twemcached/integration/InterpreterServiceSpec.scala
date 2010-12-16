@@ -33,9 +33,11 @@ class InterpreterServiceSpec extends Specification {
 
     "set & get" in {
       val value = ChannelBuffers.wrappedBuffer("value".getBytes)
-      println(client(Set("key", value))(2.second))
-//      println(client(Get(Seq("key")))(1.second))
-//      result(1.second) mustEqual Values(Seq(Value("key", value)))
+      val result = for {
+        _ <- client(Set("key", value))
+        r <- client(Get(Seq("key")))
+      } yield r
+      result(1.second) mustEqual Values(Seq(Value("key", value)))
     }
   }
 }
