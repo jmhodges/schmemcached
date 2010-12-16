@@ -4,10 +4,14 @@ import text.Parser
 import org.jboss.netty.buffer.ChannelBuffer
 
 object ParseResponse extends Parser {
+  case class ValueLine(tokens: Seq[String], buffer: ChannelBuffer) {
+    val toValue = Value(tokens.head, buffer)
+  }
   private[this] val VALUE      = "VALUE"
   private[this] val STORED     = "STORED"
   private[this] val NOT_STORED = "NOT_STORED"
   private[this] val DELETED    = "DELETED"
+  private[this] val END        = "END"
 
   def needsData(tokens: Seq[String]) = {
     val responseName = tokens.head
@@ -18,7 +22,10 @@ object ParseResponse extends Parser {
     } else None
   }
 
-  def apply(tokens: Seq[String]): Response = {
+  def isEnd(tokens: Seq[String]) =
+    (tokens.length == 1 && tokens.head == END)
+
+  def apply(tokens: Seq[String]) = {
     tokens.head match {
       case STORED     => Stored()
       case NOT_STORED => NotStored()
@@ -26,11 +33,8 @@ object ParseResponse extends Parser {
     }
   }
 
-  def parseValues(values: Seq[(Seq[String], ChannelBuffer)]): Response = {
-    val vs = values map { case (tokens, buffer) =>
-      Value(tokens.head, buffer)
-    }
-    Values(vs)
+  def parseValues(valueLines: Seq[ValueLine]) = {
+    Values(valueLines.map(_.toValue))
   }
 
   private[this] def validateValueResponse(args: Seq[String]) = {

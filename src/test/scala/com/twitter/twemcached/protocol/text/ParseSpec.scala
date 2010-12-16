@@ -3,6 +3,7 @@ package com.twitter.twemcached.protocol.text
 import org.specs.Specification
 import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
 import com.twitter.twemcached.protocol._
+import com.twitter.twemcached.protocol.ParseResponse.ValueLine
 
 class ParseSpec extends Specification {
   "AbstractParser" should {
@@ -34,6 +35,10 @@ class ParseSpec extends Specification {
         Some(1)
     }
 
+    "isEnd" in {
+      ParseResponse.isEnd(Seq("END")) mustBe true
+    }
+
     "parse simple responses" in {
       ParseResponse(Seq("STORED"))     mustEqual Stored()
       ParseResponse(Seq("NOT_STORED")) mustEqual NotStored()
@@ -44,8 +49,8 @@ class ParseSpec extends Specification {
       val one = wrappedBuffer("1".getBytes)
       val two = wrappedBuffer("2".getBytes)
       val values = Seq(
-        (Seq("foo", "0", "1"), one),
-        (Seq("bar", "0", "1"), two))
+        ValueLine(Seq("foo", "0", "1"), one),
+        ValueLine(Seq("bar", "0", "1"), two))
 
       ParseResponse.parseValues(values) mustEqual
         Values(Seq(
