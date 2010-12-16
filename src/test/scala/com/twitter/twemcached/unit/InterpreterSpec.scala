@@ -1,13 +1,14 @@
-package com.twitter.twemcached.protocol
+package com.twitter.twemcached.unit
 
 import org.specs.Specification
 import com.twitter.util.MapMaker
 import com.twitter.twemcached.Interpreter
 import org.jboss.netty.buffer.{ChannelBuffer, ChannelBuffers}
+import com.twitter.twemcached.protocol._
 
 class InterpreterSpec extends Specification {
   "Interpreter" should {
-    val map = MapMaker[String, ChannelBuffer](_.softValues)
+    val map = MapMaker[String, ChannelBuffer] { _ => }
     val interpreter = new Interpreter(map)
 
     "set & get" in {

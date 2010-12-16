@@ -1,8 +1,9 @@
-package com.twitter.twemcached.protocol.text
+package com.twitter.twemcached.unit.protocol.text
 
 import org.specs.Specification
 import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
 import com.twitter.twemcached.protocol.Add
+import com.twitter.twemcached.protocol.text.Show
 
 object ShowSpec extends Specification {
   "Show" should {

@@ -1,9 +1,10 @@
-package com.twitter.twemcached.protocol.text
+package com.twitter.twemcached.unit.protocol.text
 
 import org.specs.Specification
 import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
 import com.twitter.twemcached.protocol._
 import com.twitter.twemcached.protocol.ParseResponse.ValueLine
+import com.twitter.twemcached.protocol.text.{ParseCommand, Parser}
 
 class ParseSpec extends Specification {
   "AbstractParser" should {
