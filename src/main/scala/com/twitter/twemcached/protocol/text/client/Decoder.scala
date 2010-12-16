@@ -3,7 +3,8 @@ package com.twitter.twemcached.protocol.text.client
 import org.jboss.netty.channel._
 import org.jboss.netty.buffer.ChannelBuffer
 import com.twitter.util.StateMachine
-import com.twitter.twemcached.protocol.text.{AbstractDecoder, ParseCommand}
+import com.twitter.twemcached.protocol.text.AbstractDecoder
+import com.twitter.twemcached.protocol.ParseResponse
 
 class Decoder extends AbstractDecoder with StateMachine {
   case class AwaitingResponse()                extends State
@@ -27,15 +28,15 @@ class Decoder extends AbstractDecoder with StateMachine {
 
     state match {
       case AwaitingResponse() =>
-        val tokens = ParseCommand.tokenize(data)
-        val bytesNeeded = ParseCommand.needsData(tokens)
+        val tokens = ParseResponse.tokenize(data)
+        val bytesNeeded = ParseResponse.needsData(tokens)
         if (bytesNeeded.isDefined) {
           awaitData(tokens, bytesNeeded.get)
         } else {
-          Channels.fireMessageReceived(ctx, ParseCommand.parse(tokens))
+          Channels.fireMessageReceived(ctx, ParseResponse(tokens))
         }
       case AwaitingData(tokens) =>
-        Channels.fireMessageReceived(ctx, ParseCommand(tokens, data))
+//        Channels.fireMessageReceived(ctx, ParseResponse(tokens, data))
         pipeline.remove("decodeData")
         awaitResponse()
     }
