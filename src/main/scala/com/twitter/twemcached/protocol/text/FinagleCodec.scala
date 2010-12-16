@@ -22,7 +22,8 @@ class FinagleCodec(maxFrameLength: StorageUnit) extends Codec {
       def getPipeline() = {
         val pipeline = Channels.pipeline()
 
-//        pipeline.addLast("encoder", Encoder)
+        pipeline.addLast("decoder", new client.Decoder)
+        pipeline.addLast("encoder", client.Encoder)
         pipeline
       }
     }

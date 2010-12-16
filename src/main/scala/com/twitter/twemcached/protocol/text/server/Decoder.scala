@@ -2,7 +2,7 @@ package com.twitter.twemcached.protocol.text.server
 
 import org.jboss.netty.channel._
 import com.twitter.util.StateMachine
-import org.jboss.netty.buffer.{ChannelBuffers, ChannelBuffer}
+import org.jboss.netty.buffer.ChannelBuffer
 import com.twitter.twemcached.protocol.text.{AbstractDecoder, ParseCommand}
 
 class Decoder extends AbstractDecoder with StateMachine {
@@ -43,8 +43,7 @@ class Decoder extends AbstractDecoder with StateMachine {
   private[this] def awaitData(tokens: Seq[String], bytesNeeded: Int) {
     state = AwaitingData(tokens)
     pipeline.remove("decodeLine")
-    pipeline.addBefore("decoder", "decodeData",
-      new DecodeData(bytesNeeded))
+    pipeline.addBefore("decoder", "decodeData", new DecodeData(bytesNeeded))
   }
 
   private[this] def awaitCommand() {
