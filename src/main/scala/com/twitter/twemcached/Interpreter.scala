@@ -19,10 +19,10 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer], concurrencyLevel: In
 
   def apply(command: Command): Response = {
     command match {
-      case Set(key, value)      =>
+      case Set(key, value) =>
         data(key) = value
         Stored()
-      case Add(key, value)      =>
+      case Add(key, value) =>
         stripe(key).synchronized {
           val existing = data.get(key)
           if (existing.isDefined)
@@ -32,7 +32,7 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer], concurrencyLevel: In
             Stored()
           }
         }
-      case Replace(key, value)  =>
+      case Replace(key, value) =>
         stripe(key).synchronized {
           val existing = data.get(key)
           if (existing.isDefined) {
@@ -42,7 +42,7 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer], concurrencyLevel: In
             NotStored()
           }
         }
-      case Append(key, value)   =>
+      case Append(key, value) =>
         stripe(key).synchronized {
           val existing = data.get(key)
           if (existing.isDefined) {
@@ -52,7 +52,7 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer], concurrencyLevel: In
             NotStored()
           }
         }
-      case Prepend(key, value)  =>
+      case Prepend(key, value) =>
         stripe(key).synchronized {
           val existing = data.get(key)
           if (existing.isDefined) {
@@ -62,18 +62,18 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer], concurrencyLevel: In
             NotStored()
           }
         }
-      case Get(keys)            =>
+      case Get(keys) =>
         Values(
           keys flatMap { key =>
             data.get(key) map(Value(key, _))
           }
         )
-      case Delete(key)  =>
+      case Delete(key) =>
         if (data.remove(key).isDefined)
           Deleted()
         else
           NotStored()
-      case Incr(key, value)     =>
+      case Incr(key, value) =>
         stripe(key).synchronized {
           val existing = data.get(key)
           if (existing.isDefined) {
@@ -89,7 +89,7 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer], concurrencyLevel: In
             NotStored()
           }
         }
-      case Decr(key, value)     =>
+      case Decr(key, value) =>
         apply(Incr(key, -value))
     }
   }
