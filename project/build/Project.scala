@@ -23,7 +23,7 @@ class TfeProject(info: ProjectInfo)
 
   val netty = "org.jboss.netty" %  "netty" % "3.2.2.Final"
   inline("com.twitter" % "finagle"  % "1.0.2"          )
-  inline("com.twitter" % "util"     % "1.2.5"          )
+  inline("com.twitter" % "util"     % "1.2.8"          )
 
   override def distZipName = "%s.zip".format(name)
 

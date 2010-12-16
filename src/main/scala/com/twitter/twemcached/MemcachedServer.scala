@@ -3,12 +3,11 @@ package com.twitter.twemcached
 import org.jboss.netty.channel.Channel
 import com.twitter.finagle.builder.ServerBuilder
 import com.twitter.util.MapMaker
-import com.twitter.util.StorageUnitConversions._
-import java.net.InetSocketAddress
 import org.jboss.netty.buffer.ChannelBuffer
-import protocol.text.FinagleCodec
+import protocol.text.Memcached
+import java.net.SocketAddress
 
-class MemcachedServer(port: Int) {
+class MemcachedServer(address: SocketAddress) {
   private[this] val map = MapMaker[String, ChannelBuffer](_.softValues)
   private[this] val interpreter = new Interpreter(map)
   private[this] val service = new InterpreterService(interpreter)
@@ -16,9 +15,9 @@ class MemcachedServer(port: Int) {
   private[this] val serverSpec =
     ServerBuilder()
       .name("twemcached")
-      .codec(new FinagleCodec(1.megabyte))
+      .codec(Memcached)
       .service(service)
-      .bindTo(new InetSocketAddress(port))
+      .bindTo(address)
 
   private[this] var channel: Option[Channel] = None
 

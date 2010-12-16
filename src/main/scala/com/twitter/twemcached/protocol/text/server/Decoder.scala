@@ -4,10 +4,11 @@ import org.jboss.netty.channel._
 import com.twitter.util.StateMachine
 import org.jboss.netty.buffer.ChannelBuffer
 import com.twitter.twemcached.protocol.text.{AbstractDecoder, ParseCommand}
+import com.twitter.twemcached.protocol.Command
 
 class Decoder extends AbstractDecoder with StateMachine {
   case class AwaitingCommand() extends State
-  case class AwaitingData(tokens: Seq[String]) extends State
+  case class AwaitingData(tokens: Seq[String], bytesNeeded: Int) extends State
 
   private[this] var pipeline: ChannelPipeline = _
 
@@ -21,33 +22,34 @@ class Decoder extends AbstractDecoder with StateMachine {
     awaitCommand()
   }
 
-  override def messageReceived(ctx: ChannelHandlerContext, e: MessageEvent) {
-    val data = e.getMessage.asInstanceOf[ChannelBuffer]
-
+  def decode(ctx: ChannelHandlerContext, channel: Channel, buffer: ChannelBuffer): Command = {
     state match {
       case AwaitingCommand() =>
-        val tokens = ParseCommand.tokenize(data)
+        val line = decodeLine(buffer)
+        if (line eq null) return null
+
+        val tokens = ParseCommand.tokenize(buffer)
         val bytesNeeded = ParseCommand.needsData(tokens)
         if (bytesNeeded.isDefined) {
           awaitData(tokens, bytesNeeded.get)
+          null
         } else {
-          Channels.fireMessageReceived(ctx, ParseCommand.parse(tokens))
+          ParseCommand.parse(tokens)
         }
-      case AwaitingData(tokens) =>
-        Channels.fireMessageReceived(ctx, ParseCommand(tokens, data))
-        pipeline.remove("decodeData")
+      case AwaitingData(tokens, bytesNeeded) =>
+        val data = decodeData(bytesNeeded, buffer)
+        if (data eq null) return null
+
         awaitCommand()
+        ParseCommand(tokens, buffer)
     }
   }
 
   private[this] def awaitData(tokens: Seq[String], bytesNeeded: Int) {
-    state = AwaitingData(tokens)
-    pipeline.remove("decodeLine")
-    pipeline.addBefore("decoder", "decodeData", new DecodeData(bytesNeeded))
+    state = AwaitingData(tokens, bytesNeeded)
   }
 
   private[this] def awaitCommand() {
     state = AwaitingCommand()
-    pipeline.addBefore("decoder", "decodeLine", DecodeLine)
   }
 }

@@ -1,21 +1,21 @@
 package com.twitter.twemcached.protocol.text
 
 import com.twitter.finagle.builder.Codec
-import org.jboss.netty.channel.{Channels, ChannelPipelineFactory}
-import com.twitter.util.StorageUnit
+import org.jboss.netty.channel._
 
-class FinagleCodec(maxFrameLength: StorageUnit) extends Codec {
+object Memcached extends Codec {
   val serverPipelineFactory = {
     new ChannelPipelineFactory {
       def getPipeline() = {
         val pipeline = Channels.pipeline()
 
-        pipeline.addLast("decoder", new server.Decoder)
         pipeline.addLast("encoder", server.Encoder)
+        pipeline.addLast("decoder", new server.Decoder)
         pipeline
       }
     }
   }
+
 
   val clientPipelineFactory = {
     new ChannelPipelineFactory {

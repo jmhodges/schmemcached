@@ -5,12 +5,12 @@ import org.jboss.netty.buffer.ChannelBuffer
 import com.twitter.util.StateMachine
 import com.twitter.twemcached.protocol.text.AbstractDecoder
 import com.twitter.twemcached.protocol.ParseResponse.ValueLine
-import com.twitter.twemcached.protocol.{ServerError, ParseResponse}
+import com.twitter.twemcached.protocol.{Values, Response, ServerError, ParseResponse}
 
 class Decoder extends AbstractDecoder with StateMachine {
   case class AwaitingResponse()                                             extends State
   case class AwaitingResponseOrEnd(valuesSoFar: Seq[ValueLine])             extends State
-  case class AwaitingData(valuesSoFar: Seq[ValueLine], tokens: Seq[String]) extends State
+  case class AwaitingData(valuesSoFar: Seq[ValueLine], tokens: Seq[String], bytesNeeded: Int) extends State
 
   private[this] var pipeline: ChannelPipeline = _
 
@@ -24,46 +24,45 @@ class Decoder extends AbstractDecoder with StateMachine {
     awaitResponse()
   }
 
-  override def messageReceived(ctx: ChannelHandlerContext, e: MessageEvent) {
-    val data = e.getMessage.asInstanceOf[ChannelBuffer]
-
+  def decode(ctx: ChannelHandlerContext, channel: Channel, buffer: ChannelBuffer): Response = {
     state match {
       case AwaitingResponse() =>
-        val tokens = ParseResponse.tokenize(data)
+        val line = decodeLine(buffer)
+        if (line eq null) return null
+
+        val tokens = ParseResponse.tokenize(buffer)
         val bytesNeeded = ParseResponse.needsData(tokens)
         if (bytesNeeded.isDefined) {
           awaitData(Seq(), tokens, bytesNeeded.get)
+          null
         } else {
-          Channels.fireMessageReceived(ctx, ParseResponse(tokens))
+          ParseResponse(tokens)
         }
-      case AwaitingData(valuesSoFar, tokens) =>
-        pipeline.remove("decodeData")
-        awaitResponseOrEnd(valuesSoFar ++ Seq(ValueLine(tokens, data)))
+      case AwaitingData(valuesSoFar, tokens, bytesNeeded) =>
+        awaitResponseOrEnd(valuesSoFar ++ Seq(ValueLine(tokens, buffer)))
+        null
       case AwaitingResponseOrEnd(valuesSoFar) =>
-        val tokens = ParseResponse.tokenize(data)
+        val tokens = ParseResponse.tokenize(buffer)
         if (ParseResponse.isEnd(tokens)) {
-          Channels.fireMessageReceived(ctx, valuesSoFar)
+          ParseResponse.parseValues(valuesSoFar)
         } else {
           val bytesNeeded = ParseResponse.needsData(tokens)
           if (!bytesNeeded.isDefined) throw new ServerError("Invalid state transition")
           awaitData(valuesSoFar, tokens, bytesNeeded.get)
+          null
         }
     }
   }
 
   private[this] def awaitData(valuesSoFar: Seq[ValueLine], tokens: Seq[String], bytesNeeded: Int) {
-    state = AwaitingData(valuesSoFar, tokens)
-    pipeline.remove("decodeLine")
-    pipeline.addBefore("decoder", "decodeData", new DecodeData(bytesNeeded))
+    state = AwaitingData(valuesSoFar, tokens, bytesNeeded)
   }
 
   private[this] def awaitResponse() {
     state = AwaitingResponse()
-    pipeline.addBefore("decoder", "decodeLine", DecodeLine)
   }
 
   private[this] def awaitResponseOrEnd(valuesSoFar: Seq[ValueLine]) {
     state = AwaitingResponseOrEnd(valuesSoFar)
-    pipeline.addBefore("decoder", "decodeLine", DecodeLine)
   }
 }
