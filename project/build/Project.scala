@@ -1,7 +1,7 @@
 import sbt._
 import com.twitter.sbt._
 
-class TfeProject(info: ProjectInfo)
+class Project(info: ProjectInfo)
   extends StandardProject(info)
   with InlineDependencies
 {
@@ -14,7 +14,6 @@ class TfeProject(info: ProjectInfo)
 
   val twitterInternalRepo = "twitter.com" at "http://binaries.local.twitter.com/maven"
 
-
   // We need to inline the scala compiler here due to a bug in sbt
   // where it doesn't include it even if a library depends on it
   // (ie. util).
@@ -22,7 +21,7 @@ class TfeProject(info: ProjectInfo)
   override def filterScalaJars = false
 
   val netty = "org.jboss.netty" %  "netty" % "3.2.2.Final"
-  inline("com.twitter" % "finagle"  % "1.0.2"          )
+  inline("com.twitter" % "finagle"  % "1.0.3"          )
   inline("com.twitter" % "util"     % "1.2.8"          )
 
   override def distZipName = "%s.zip".format(name)

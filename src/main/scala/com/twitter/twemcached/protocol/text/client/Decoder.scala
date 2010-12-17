@@ -28,7 +28,7 @@ class Decoder extends AbstractDecoder[Response] with StateMachine {
         decodeLine(buffer, ParseResponse.needsData(_)) { tokens =>
           if (ParseResponse.isEnd(tokens)) {
             ParseResponse.parseValues(valuesSoFar)
-          } else null
+          } else needMoreData
         }
     }
   }

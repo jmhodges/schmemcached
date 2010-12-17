@@ -6,6 +6,7 @@ import com.twitter.util.MapMaker
 import org.jboss.netty.buffer.ChannelBuffer
 import protocol.text.Memcached
 import java.net.SocketAddress
+import java.util.logging.Logger
 
 class MemcachedServer(address: SocketAddress) {
   private[this] val map = MapMaker[String, ChannelBuffer](_.softValues)
