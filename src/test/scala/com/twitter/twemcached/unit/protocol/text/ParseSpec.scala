@@ -6,10 +6,10 @@ import com.twitter.twemcached.protocol._
 import com.twitter.twemcached.protocol.ParseResponse.ValueLine
 import com.twitter.twemcached.protocol.text.{ParseCommand, Parser}
 
-class ParseSpec extends Specification {
-  "AbstractParser" should {
+class ParserSpec extends Specification {
+  "Parser" should {
     "tokenize" in {
-      new Parser().tokenize(wrappedBuffer("set my_key 0 2592000 1".getBytes)) mustEqual
+      Parser.tokenize(wrappedBuffer("set my_key 0 2592000 1".getBytes)) mustEqual
         Seq("set", "my_key", "0", "2592000", "1")
     }
   }

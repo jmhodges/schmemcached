@@ -3,7 +3,9 @@ package com.twitter.twemcached.protocol
 import text.Parser
 import org.jboss.netty.buffer.ChannelBuffer
 
-object ParseResponse extends Parser {
+object ParseResponse extends Parser[Response] {
+  import Parser.DIGITS
+
   case class ValueLine(tokens: Seq[String], buffer: ChannelBuffer) {
     val toValue = Value(tokens(1), buffer)
   }

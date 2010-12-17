@@ -4,7 +4,7 @@ import org.jboss.netty.buffer.{ChannelBufferIndexFinder, ChannelBuffer}
 import org.jboss.netty.util.CharsetUtil
 import collection.mutable.ArrayBuffer
 
-class Parser {
+object Parser {
   private[this] val SKIP_SPACE = 1
   val DIGITS = "^\\d+$"
 
@@ -26,3 +26,7 @@ class Parser {
   }
 }
 
+trait Parser[A] {
+  def apply(tokens: Seq[String]): A
+  def needsData(tokens: Seq[String]): Option[Int]
+}

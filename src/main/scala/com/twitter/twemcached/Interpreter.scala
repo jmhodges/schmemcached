@@ -5,9 +5,11 @@ import scala.collection.mutable
 import org.jboss.netty.buffer.ChannelBuffer
 import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
 import org.jboss.netty.util.CharsetUtil
+import text.Parser
 
 class Interpreter(data: mutable.Map[String, ChannelBuffer], concurrencyLevel: Int = 16) {
-  private[this] val DIGITS     = "^\\d+$"
+  import Parser.DIGITS
+
   private[this] val stripes    = {
     class Lock
     val array = new Array[AnyRef](concurrencyLevel)

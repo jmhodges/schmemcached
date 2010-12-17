@@ -4,9 +4,11 @@ import scala.Function.tupled
 import org.jboss.netty.buffer.ChannelBuffer
 import com.twitter.twemcached.protocol._
 
-object ParseCommand extends Parser {
+object ParseCommand extends Parser[Command] {
+  import Parser.DIGITS
   private[this] val NOREPLY = "noreply"
   private[this] val storageCommands = collection.Set("set", "add", "replace", "append", "prepend")
+
   def needsData(tokens: Seq[String]) = {
     val commandName = tokens.head
     val args = tokens.tail
@@ -29,7 +31,7 @@ object ParseCommand extends Parser {
     }
   }
 
-  def parse(tokens: Seq[String]): Command = {
+  def apply(tokens: Seq[String]): Command = {
     val commandName = tokens.head
     val args = tokens.tail
     commandName match {
@@ -54,14 +56,14 @@ object ParseCommand extends Parser {
   private[this] def validateArithmeticCommand(tokens: Seq[String]) = {
     if (tokens.size < 2) throw new ClientError("Too few arguments")
     if (tokens.size == 3 && tokens.last != NOREPLY) throw new ClientError("Too many arguments")
-    if (!tokens(1).matches(ParseCommand.DIGITS)) throw new ClientError("Delta is not a number")
+    if (!tokens(1).matches(DIGITS)) throw new ClientError("Delta is not a number")
 
     (tokens.head, tokens(1).toInt)
   }
 
   private[this] def validateDeleteCommand(tokens: Seq[String]) = {
     if (tokens.size < 1) throw new ClientError("No key")
-    if (tokens.size == 2 && !tokens.last.matches(ParseCommand.DIGITS)) throw new ClientError("Timestamp is poorly formed")
+    if (tokens.size == 2 && !tokens.last.matches(DIGITS)) throw new ClientError("Timestamp is poorly formed")
     if (tokens.size > 2) throw new ClientError("Too many arguments")
 
     tokens.head
