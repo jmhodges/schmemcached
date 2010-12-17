@@ -10,6 +10,7 @@ import com.twitter.twemcached.protocol.text.Memcached
 import com.twitter.util.TimeConversions._
 import com.twitter.finagle.service.Service
 import java.net.InetSocketAddress
+import com.twitter.twemcached.util.ChannelBufferUtils._
 
 class InterpreterServiceSpec extends Specification {
   "InterpreterService" should {
@@ -32,12 +33,13 @@ class InterpreterServiceSpec extends Specification {
     }
 
     "set & get" in {
-      val value = ChannelBuffers.wrappedBuffer("value".getBytes)
+      val key   = "key"
+      val value = "value"
       val result = for {
-        _ <- client(Set("key", value))
-        r <- client(Get(Seq("key")))
+        _ <- client(Set(key, value))
+        r <- client(Get(Seq(key)))
       } yield r
-      result(1.second) mustEqual Values(Seq(Value("key", value)))
+      result(1.second) mustEqual Values(Seq(Value(key, value)))
     }
   }
 }

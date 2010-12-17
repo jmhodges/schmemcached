@@ -9,4 +9,4 @@ case class Deleted()                  extends Response
 
 case class Values(values: Seq[Value]) extends Response
 
-case class Value(key: String, value: ChannelBuffer)
+case class Value(key: ChannelBuffer, value: ChannelBuffer)

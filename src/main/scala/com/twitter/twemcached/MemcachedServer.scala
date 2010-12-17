@@ -9,7 +9,7 @@ import java.net.SocketAddress
 import java.util.logging.Logger
 
 class MemcachedServer(address: SocketAddress) {
-  private[this] val map = MapMaker[String, ChannelBuffer](_.softValues)
+  private[this] val map = MapMaker[ChannelBuffer, ChannelBuffer](_.softValues)
   private[this] val interpreter = new Interpreter(map)
   private[this] val service = new InterpreterService(interpreter)
 

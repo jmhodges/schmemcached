@@ -3,28 +3,29 @@ package com.twitter.twemcached.protocol.text
 import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
 import com.twitter.twemcached.protocol._
 import org.jboss.netty.buffer.ChannelBuffer
+import com.twitter.twemcached.util.ChannelBufferUtils._
 
 object Show {
-  private[this] val DELIMETER  = "\r\n".getBytes
-  private[this] val VALUE      = "VALUE ".getBytes
-  private[this] val ZERO       = "0".getBytes
-  private[this] val SPACE      = " ".getBytes
-  private[this] val GET        = "get".getBytes
-  private[this] val DELETE     = "delete".getBytes
-  private[this] val INCR       = "incr".getBytes
-  private[this] val DECR       = "decr".getBytes
-  private[this] val ADD        = "add".getBytes
-  private[this] val SET        = "set".getBytes
-  private[this] val APPEND     = "append".getBytes
-  private[this] val PREPEND    = "prepend".getBytes
-  private[this] val REPLACE    = "replace".getBytes
+  private[this] val DELIMETER: ChannelBuffer = "\r\n"
+  private[this] val VALUE    : ChannelBuffer = "VALUE "
+  private[this] val ZERO     : ChannelBuffer = "0"
+  private[this] val SPACE    : ChannelBuffer = " "
+  private[this] val GET      : ChannelBuffer = "get"
+  private[this] val DELETE   : ChannelBuffer = "delete"
+  private[this] val INCR     : ChannelBuffer = "incr"
+  private[this] val DECR     : ChannelBuffer = "decr"
+  private[this] val ADD      : ChannelBuffer = "add"
+  private[this] val SET      : ChannelBuffer = "set"
+  private[this] val APPEND   : ChannelBuffer = "append"
+  private[this] val PREPEND  : ChannelBuffer = "prepend"
+  private[this] val REPLACE  : ChannelBuffer = "replace"
 
-  private[this] val STORED     = wrappedBuffer("STORED".getBytes    , DELIMETER)
-  private[this] val END        = wrappedBuffer("END".getBytes       , DELIMETER)
-  private[this] val NOT_STORED = wrappedBuffer("STORED".getBytes    , DELIMETER)
-  private[this] val EXISTS     = wrappedBuffer("EXISTS".getBytes    , DELIMETER)
-  private[this] val NOT_FOUND  = wrappedBuffer("NOT_FOUND".getBytes , DELIMETER)
-  private[this] val DELETED    = wrappedBuffer("DELETED".getBytes   , DELIMETER)
+  private[this] val STORED     = wrappedBuffer("STORED"    , DELIMETER)
+  private[this] val END        = wrappedBuffer("END"       , DELIMETER)
+  private[this] val NOT_STORED = wrappedBuffer("STORED"    , DELIMETER)
+  private[this] val EXISTS     = wrappedBuffer("EXISTS"    , DELIMETER)
+  private[this] val NOT_FOUND  = wrappedBuffer("NOT_FOUND" , DELIMETER)
+  private[this] val DELETED    = wrappedBuffer("DELETED"   , DELIMETER)
 
   def apply(response: Response) = {
     response match {
@@ -34,7 +35,7 @@ object Show {
       case Values(values) =>
         val shown = values map { case Value(key, value) =>
           wrappedBuffer(
-            wrappedBuffer(VALUE, key.getBytes, SPACE, ZERO, SPACE, value.capacity.toString.getBytes, DELIMETER),
+            wrappedBuffer(VALUE, key, SPACE, ZERO, SPACE, value.capacity.toString, DELIMETER),
             value,
             wrappedBuffer(DELIMETER))
         }
@@ -59,20 +60,20 @@ object Show {
       case Gets(keys) =>
         wrappedBuffer(wrappedBuffer(GET, SPACE),
           wrappedBuffer(keys.map { key =>
-            wrappedBuffer(key.getBytes, SPACE)
+            wrappedBuffer(key, SPACE)
           }: _*), wrappedBuffer(DELIMETER))
       case Incr(key, amount) =>
-        wrappedBuffer(INCR, SPACE, amount.toString.getBytes, DELIMETER)
+        wrappedBuffer(INCR, SPACE, amount.toString, DELIMETER)
       case Decr(key, amount) =>
-        wrappedBuffer(DECR, SPACE, amount.toString.getBytes, DELIMETER)
+        wrappedBuffer(DECR, SPACE, amount.toString, DELIMETER)
       case Delete(key) =>
-        wrappedBuffer(DELETE, SPACE, key.getBytes, DELIMETER)
+        wrappedBuffer(DELETE, SPACE, key, DELIMETER)
     }
   }
 
-  @inline private[this] def showStorageCommand(name: Array[Byte], key: String, value: ChannelBuffer) = {
+  @inline private[this] def showStorageCommand(name: ChannelBuffer, key: ChannelBuffer, value: ChannelBuffer) = {
     wrappedBuffer(
-      wrappedBuffer(name, SPACE, key.getBytes, SPACE, ZERO, SPACE, ZERO, SPACE, value.capacity.toString.getBytes, DELIMETER),
-      value, wrappedBuffer(DELIMETER))
+      wrappedBuffer(name, SPACE, key, SPACE, ZERO, SPACE, ZERO, SPACE, value.capacity.toString, DELIMETER),
+      value, DELIMETER)
   }
 }

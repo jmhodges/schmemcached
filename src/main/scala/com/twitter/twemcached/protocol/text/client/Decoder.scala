@@ -10,7 +10,7 @@ import com.twitter.twemcached.protocol.text.{Parser, AbstractDecoder}
 class Decoder extends AbstractDecoder[Response] with StateMachine {
   case class AwaitingResponse()                                             extends State
   case class AwaitingResponseOrEnd(valuesSoFar: Seq[ValueLine])             extends State
-  case class AwaitingData(valuesSoFar: Seq[ValueLine], tokens: Seq[String], bytesNeeded: Int) extends State
+  case class AwaitingData(valuesSoFar: Seq[ValueLine], tokens: Seq[ChannelBuffer], bytesNeeded: Int) extends State
 
   def decode(ctx: ChannelHandlerContext, channel: Channel, buffer: ChannelBuffer): Response = {
     state match {
@@ -33,7 +33,7 @@ class Decoder extends AbstractDecoder[Response] with StateMachine {
     }
   }
 
-  protected def awaitData(tokens: Seq[String], bytesNeeded: Int) = {
+  protected def awaitData(tokens: Seq[ChannelBuffer], bytesNeeded: Int) = {
     state match {
       case AwaitingResponse() =>
         awaitData(Seq(), tokens, bytesNeeded)
@@ -42,7 +42,7 @@ class Decoder extends AbstractDecoder[Response] with StateMachine {
     }
   }
 
-  private[this] def awaitData(valuesSoFar: Seq[ValueLine], tokens: Seq[String], bytesNeeded: Int) = {
+  private[this] def awaitData(valuesSoFar: Seq[ValueLine], tokens: Seq[ChannelBuffer], bytesNeeded: Int) = {
     state = AwaitingData(valuesSoFar, tokens, bytesNeeded)
     null
   }

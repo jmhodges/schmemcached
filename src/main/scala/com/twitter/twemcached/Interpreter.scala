@@ -6,8 +6,9 @@ import org.jboss.netty.buffer.ChannelBuffer
 import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
 import org.jboss.netty.util.CharsetUtil
 import text.Parser
+import com.twitter.twemcached.util.ChannelBufferUtils._
 
-class Interpreter(data: mutable.Map[String, ChannelBuffer], concurrencyLevel: Int = 16) {
+class Interpreter(data: mutable.Map[ChannelBuffer, ChannelBuffer], concurrencyLevel: Int = 16) {
   import Parser.DIGITS
 
   private[this] val stripes    = {
@@ -82,9 +83,9 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer], concurrencyLevel: In
             data(key) = {
               val existingString = existing.get.toString(CharsetUtil.US_ASCII)
               if (existingString.matches(DIGITS))
-                wrappedBuffer((existingString.toInt + value).toString.getBytes)
+                (existingString.toInt + value).toString
               else
-                wrappedBuffer(value.toString.getBytes)
+                value.toString
             }
             Stored()
           } else {
@@ -96,5 +97,5 @@ class Interpreter(data: mutable.Map[String, ChannelBuffer], concurrencyLevel: In
     }
   }
 
-  @inline private[this] def stripe(key: String) = stripes(key.hashCode % stripes.length)
+  @inline private[this] def stripe(key: ChannelBuffer) = stripes(key.hashCode % stripes.length)
 }

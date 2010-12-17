@@ -5,11 +5,12 @@ import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
 import com.twitter.twemcached.protocol._
 import com.twitter.twemcached.protocol.ParseResponse.ValueLine
 import com.twitter.twemcached.protocol.text.{ParseCommand, Parser}
+import com.twitter.twemcached.util.ChannelBufferUtils._
 
 class ParserSpec extends Specification {
   "Parser" should {
     "tokenize" in {
-      Parser.tokenize(wrappedBuffer("set my_key 0 2592000 1".getBytes)) mustEqual
+      Parser.tokenize("set my_key 0 2592000 1") mustEqual
         Seq("set", "my_key", "0", "2592000", "1")
     }
   }
@@ -21,7 +22,7 @@ class ParserSpec extends Specification {
     }
 
     "parse storage commands" in {
-      val buffer = wrappedBuffer("bar".getBytes)
+      val buffer = "bar"
       ParseCommand(Seq("add",     "foo", "0", "0", "3"), buffer) mustEqual Add("foo", buffer)
       ParseCommand(Seq("set",     "foo", "0", "0", "3"), buffer) mustEqual Set("foo", buffer)
       ParseCommand(Seq("replace", "foo", "0", "0", "3"), buffer) mustEqual Replace("foo", buffer)
@@ -47,8 +48,8 @@ class ParserSpec extends Specification {
     }
 
     "parse values" in {
-      val one = wrappedBuffer("1".getBytes)
-      val two = wrappedBuffer("2".getBytes)
+      val one = "1"
+      val two = "2"
       val values = Seq(
         ValueLine(Seq("foo", "0", "1"), one),
         ValueLine(Seq("bar", "0", "1"), two))

@@ -8,7 +8,7 @@ import org.jboss.netty.buffer.{ChannelBuffers, ChannelBuffer}
 
 class Decoder extends AbstractDecoder[Command] with StateMachine {
   case class AwaitingCommand() extends State
-  case class AwaitingData(tokens: Seq[String], bytesNeeded: Int) extends State
+  case class AwaitingData(tokens: Seq[ChannelBuffer], bytesNeeded: Int) extends State
 
   def decode(ctx: ChannelHandlerContext, channel: Channel, buffer: ChannelBuffer): Command = {
     state match {
@@ -23,7 +23,7 @@ class Decoder extends AbstractDecoder[Command] with StateMachine {
     }
   }
 
-  protected def awaitData(tokens: Seq[String], bytesNeeded: Int) = {
+  protected def awaitData(tokens: Seq[ChannelBuffer], bytesNeeded: Int) = {
     state = AwaitingData(tokens, bytesNeeded)
     needMoreData
   }

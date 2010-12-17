@@ -17,7 +17,7 @@ abstract class AbstractDecoder[A] extends FrameDecoder {
     super.exceptionCaught(ctx, e)
   }
 
-  protected def decodeLine(buffer: ChannelBuffer, needsData: Seq[String] => Option[Int])(parse: Seq[String] => A): A = {
+  protected def decodeLine(buffer: ChannelBuffer, needsData: Seq[ChannelBuffer] => Option[Int])(parse: Seq[ChannelBuffer] => A): A = {
     val frameLength = buffer.bytesBefore(ChannelBufferIndexFinder.CRLF)
     if (frameLength < 0) {
       needMoreData
@@ -52,6 +52,6 @@ abstract class AbstractDecoder[A] extends FrameDecoder {
   }
 
   protected def start()
-  protected def awaitData(tokens: Seq[String], bytesNeeded: Int): A
+  protected def awaitData(tokens: Seq[ChannelBuffer], bytesNeeded: Int): A
   protected val needMoreData: A
 }
