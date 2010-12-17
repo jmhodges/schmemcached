@@ -10,6 +10,7 @@ abstract class AbstractDecoder[A] extends FrameDecoder {
 
   override def channelOpen(ctx: ChannelHandlerContext, e: ChannelStateEvent) {
     start()
+    super.channelOpen(ctx, e)
   }
 
   override def exceptionCaught(ctx: ChannelHandlerContext, e: ExceptionEvent) {

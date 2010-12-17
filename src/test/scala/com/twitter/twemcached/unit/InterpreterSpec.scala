@@ -2,7 +2,7 @@ package com.twitter.twemcached.unit
 
 import org.specs.Specification
 import com.twitter.twemcached.Interpreter
-import org.jboss.netty.buffer.{ChannelBuffer, ChannelBuffers}
+import org.jboss.netty.buffer.ChannelBuffer
 import com.twitter.twemcached.protocol._
 import scala.collection.mutable
 import com.twitter.twemcached.util.ChannelBufferUtils._
@@ -16,7 +16,7 @@ class InterpreterSpec extends Specification {
       val key   = "foo"
       val value = "bar"
       interpreter(Set(key, value))
-      interpreter(Get(Seq(key))) mustEqual Values(Seq(Value(value, value)))
+      interpreter(Get(Seq(key))) mustEqual Values(Seq(Value(key, value)))
     }
   }
 }

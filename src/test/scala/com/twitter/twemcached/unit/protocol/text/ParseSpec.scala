@@ -1,16 +1,17 @@
 package com.twitter.twemcached.unit.protocol.text
 
 import org.specs.Specification
-import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
+import org.jboss.netty.buffer.ChannelBuffer
 import com.twitter.twemcached.protocol._
 import com.twitter.twemcached.protocol.ParseResponse.ValueLine
 import com.twitter.twemcached.protocol.text.{ParseCommand, Parser}
 import com.twitter.twemcached.util.ChannelBufferUtils._
+import org.jboss.netty.util.CharsetUtil
 
 class ParserSpec extends Specification {
   "Parser" should {
     "tokenize" in {
-      Parser.tokenize("set my_key 0 2592000 1") mustEqual
+      Parser.tokenize("set my_key 0 2592000 1").toList.map(_.toString(CharsetUtil.UTF_8)) mustEqual
         Seq("set", "my_key", "0", "2592000", "1")
     }
   }
@@ -51,8 +52,8 @@ class ParserSpec extends Specification {
       val one = "1"
       val two = "2"
       val values = Seq(
-        ValueLine(Seq("foo", "0", "1"), one),
-        ValueLine(Seq("bar", "0", "1"), two))
+        ValueLine(Seq("VALUE", "foo", "0", "1"), one),
+        ValueLine(Seq("VALUE", "bar", "0", "1"), two))
 
       ParseResponse.parseValues(values) mustEqual
         Values(Seq(

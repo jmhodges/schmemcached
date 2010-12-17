@@ -30,9 +30,9 @@ object ParseResponse extends Parser[Response] {
 
   def apply(tokens: Seq[ChannelBuffer]) = {
     tokens.head match {
-      case STORED     => Stored()
-      case NOT_STORED => NotStored()
-      case DELETED    => Deleted()
+      case STORED     => Stored
+      case NOT_STORED => NotStored
+      case DELETED    => Deleted
     }
   }
 

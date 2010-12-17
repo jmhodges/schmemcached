@@ -11,7 +11,7 @@ import com.twitter.twemcached.util.ChannelBufferUtils._
 class Interpreter(data: mutable.Map[ChannelBuffer, ChannelBuffer], concurrencyLevel: Int = 16) {
   import Parser.DIGITS
 
-  private[this] val stripes    = {
+  private[this] val stripes = {
     class Lock
     val array = new Array[AnyRef](concurrencyLevel)
     (0 until concurrencyLevel) foreach { i =>
@@ -24,15 +24,15 @@ class Interpreter(data: mutable.Map[ChannelBuffer, ChannelBuffer], concurrencyLe
     command match {
       case Set(key, value) =>
         data(key) = value
-        Stored()
+        Stored
       case Add(key, value) =>
         stripe(key).synchronized {
           val existing = data.get(key)
           if (existing.isDefined)
-            NotStored()
+            NotStored
           else {
             data(key) = value
-            Stored()
+            Stored
           }
         }
       case Replace(key, value) =>
@@ -40,9 +40,9 @@ class Interpreter(data: mutable.Map[ChannelBuffer, ChannelBuffer], concurrencyLe
           val existing = data.get(key)
           if (existing.isDefined) {
             data(key) = value
-            Stored()
+            Stored
           } else {
-            NotStored()
+            NotStored
           }
         }
       case Append(key, value) =>
@@ -50,9 +50,9 @@ class Interpreter(data: mutable.Map[ChannelBuffer, ChannelBuffer], concurrencyLe
           val existing = data.get(key)
           if (existing.isDefined) {
             data(key) = wrappedBuffer(value, existing.get)
-            Stored()
+            Stored
           } else {
-            NotStored()
+            NotStored
           }
         }
       case Prepend(key, value) =>
@@ -60,9 +60,9 @@ class Interpreter(data: mutable.Map[ChannelBuffer, ChannelBuffer], concurrencyLe
           val existing = data.get(key)
           if (existing.isDefined) {
             data(key) = wrappedBuffer(existing.get, value)
-            Stored()
+            Stored
           } else {
-            NotStored()
+            NotStored
           }
         }
       case Get(keys) =>
@@ -73,9 +73,9 @@ class Interpreter(data: mutable.Map[ChannelBuffer, ChannelBuffer], concurrencyLe
         )
       case Delete(key) =>
         if (data.remove(key).isDefined)
-          Deleted()
+          Deleted
         else
-          NotStored()
+          NotStored
       case Incr(key, value) =>
         stripe(key).synchronized {
           val existing = data.get(key)
@@ -87,9 +87,9 @@ class Interpreter(data: mutable.Map[ChannelBuffer, ChannelBuffer], concurrencyLe
               else
                 value.toString
             }
-            Stored()
+            Stored
           } else {
-            NotStored()
+            NotStored
           }
         }
       case Decr(key, value) =>
@@ -97,5 +97,6 @@ class Interpreter(data: mutable.Map[ChannelBuffer, ChannelBuffer], concurrencyLe
     }
   }
 
-  @inline private[this] def stripe(key: ChannelBuffer) = stripes(key.hashCode % stripes.length)
+  @inline private[this] def stripe(key: ChannelBuffer) =
+    stripes(key.hashCode % stripes.length)
 }

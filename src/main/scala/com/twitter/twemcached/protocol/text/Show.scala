@@ -1,45 +1,60 @@
 package com.twitter.twemcached.protocol.text
 
-import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
+import org.jboss.netty.buffer.ChannelBuffers.copiedBuffer
 import com.twitter.twemcached.protocol._
-import org.jboss.netty.buffer.ChannelBuffer
 import com.twitter.twemcached.util.ChannelBufferUtils._
+import org.jboss.netty.buffer.{ChannelBuffers, ChannelBuffer}
 
 object Show {
-  private[this] val DELIMETER: ChannelBuffer = "\r\n"
-  private[this] val VALUE    : ChannelBuffer = "VALUE "
-  private[this] val ZERO     : ChannelBuffer = "0"
-  private[this] val SPACE    : ChannelBuffer = " "
-  private[this] val GET      : ChannelBuffer = "get"
-  private[this] val DELETE   : ChannelBuffer = "delete"
-  private[this] val INCR     : ChannelBuffer = "incr"
-  private[this] val DECR     : ChannelBuffer = "decr"
-  private[this] val ADD      : ChannelBuffer = "add"
-  private[this] val SET      : ChannelBuffer = "set"
-  private[this] val APPEND   : ChannelBuffer = "append"
-  private[this] val PREPEND  : ChannelBuffer = "prepend"
-  private[this] val REPLACE  : ChannelBuffer = "replace"
+  private[this] val DELIMETER     = "\r\n"   .getBytes
+  private[this] val VALUE         = "VALUE"  .getBytes
+  private[this] val ZERO          = "0"      .getBytes
+  private[this] val SPACE         = " "      .getBytes
+  private[this] val GET           = "get"    .getBytes
+  private[this] val DELETE        = "delete" .getBytes
+  private[this] val INCR          = "incr"   .getBytes
+  private[this] val DECR          = "decr"   .getBytes
+  private[this] val ADD           = "add"    .getBytes
+  private[this] val SET           = "set"    .getBytes
+  private[this] val APPEND        = "append" .getBytes
+  private[this] val PREPEND       = "prepend".getBytes
+  private[this] val REPLACE       = "replace".getBytes
+  private[this] val END           = "END"    .getBytes
 
-  private[this] val STORED     = wrappedBuffer("STORED"    , DELIMETER)
-  private[this] val END        = wrappedBuffer("END"       , DELIMETER)
-  private[this] val NOT_STORED = wrappedBuffer("STORED"    , DELIMETER)
-  private[this] val EXISTS     = wrappedBuffer("EXISTS"    , DELIMETER)
-  private[this] val NOT_FOUND  = wrappedBuffer("NOT_FOUND" , DELIMETER)
-  private[this] val DELETED    = wrappedBuffer("DELETED"   , DELIMETER)
+  private[this] val STORED        = copiedBuffer("STORED".getBytes,       DELIMETER)
+  private[this] val NOT_STORED    = copiedBuffer("NOT_STORED".getBytes,   DELIMETER)
+  private[this] val EXISTS        = copiedBuffer("EXISTS".getBytes,       DELIMETER)
+  private[this] val NOT_FOUND     = copiedBuffer("NOT_FOUND".getBytes,    DELIMETER)
+  private[this] val DELETED       = copiedBuffer("DELETED".getBytes,      DELIMETER)
 
+  private[this] val ERROR         = copiedBuffer("ERROR".getBytes,        DELIMETER)
+  private[this] val CLIENT_ERROR  = copiedBuffer("CLIENT_ERROR".getBytes, DELIMETER)
+  private[this] val SERVER_ERROR  = copiedBuffer("SERVER_ERROR".getBytes, DELIMETER)
+
+  val three = 7.toString.getBytes
   def apply(response: Response) = {
     response match {
-      case Stored()       => STORED
-      case NotStored()    => NOT_STORED
-      case Deleted()      => DELETED
+      case Stored         => STORED
+      case NotStored      => NOT_STORED
+      case Deleted        => DELETED
       case Values(values) =>
+        val buffer = ChannelBuffers.dynamicBuffer(100 * values.size)
         val shown = values map { case Value(key, value) =>
-          wrappedBuffer(
-            wrappedBuffer(VALUE, key, SPACE, ZERO, SPACE, value.capacity.toString, DELIMETER),
-            value,
-            wrappedBuffer(DELIMETER))
+          buffer.writeBytes(VALUE)
+          buffer.writeBytes(SPACE)
+          buffer.writeBytes(key)
+          buffer.writeBytes(SPACE)
+          buffer.writeBytes(ZERO)
+          buffer.writeBytes(SPACE)
+          buffer.writeBytes(three)
+          buffer.writeBytes(DELIMETER)
+          value.resetReaderIndex()
+          buffer.writeBytes(value)
+          buffer.writeBytes(DELIMETER)
         }
-        wrappedBuffer(wrappedBuffer(shown: _*), END)
+        buffer.writeBytes(END)
+        buffer.writeBytes(DELIMETER)
+        buffer
     }
   }
 
@@ -58,22 +73,60 @@ object Show {
       case Get(keys) =>
         apply(Gets(keys))
       case Gets(keys) =>
-        wrappedBuffer(wrappedBuffer(GET, SPACE),
-          wrappedBuffer(keys.map { key =>
-            wrappedBuffer(key, SPACE)
-          }: _*), wrappedBuffer(DELIMETER))
+        val buffer = ChannelBuffers.dynamicBuffer(50 + 10 * keys.size)
+        buffer.writeBytes(GET)
+        buffer.writeBytes(SPACE)
+        keys.foreach { key =>
+          buffer.writeBytes(key)
+          buffer.writeBytes(SPACE)
+        }
+        buffer.writeBytes(DELIMETER)
+        buffer
       case Incr(key, amount) =>
-        wrappedBuffer(INCR, SPACE, amount.toString, DELIMETER)
+        val buffer = ChannelBuffers.dynamicBuffer(50)
+        buffer.writeBytes(INCR)
+        buffer.writeBytes(SPACE)
+        buffer.writeBytes(amount.toString.getBytes)
+        buffer.writeBytes(DELIMETER)
+        buffer
       case Decr(key, amount) =>
-        wrappedBuffer(DECR, SPACE, amount.toString, DELIMETER)
+        val buffer = ChannelBuffers.dynamicBuffer(30)
+        buffer.writeBytes(DECR)
+        buffer.writeBytes(SPACE)
+        buffer.writeBytes(amount.toString.getBytes)
+        buffer.writeBytes(DELIMETER)
+        buffer
       case Delete(key) =>
-        wrappedBuffer(DELETE, SPACE, key, DELIMETER)
+        val buffer = ChannelBuffers.dynamicBuffer(30)
+        buffer.writeBytes(DELETE)
+        buffer.writeBytes(SPACE)
+        buffer.writeBytes(key)
+        buffer.writeBytes(DELIMETER)
+        buffer
     }
   }
 
-  @inline private[this] def showStorageCommand(name: ChannelBuffer, key: ChannelBuffer, value: ChannelBuffer) = {
-    wrappedBuffer(
-      wrappedBuffer(name, SPACE, key, SPACE, ZERO, SPACE, ZERO, SPACE, value.capacity.toString, DELIMETER),
-      value, DELIMETER)
+  def apply(throwable: Throwable) = throwable match {
+    case e: NonexistentCommand => ERROR
+    case e: ClientError        => CLIENT_ERROR
+    case e: ServerError        => SERVER_ERROR
+    case _                     => throw throwable
+  }
+
+  @inline private[this] def showStorageCommand(name: Array[Byte], key: ChannelBuffer, value: ChannelBuffer) = {
+    val buffer = ChannelBuffers.dynamicBuffer(50 + value.capacity)
+    buffer.writeBytes(name)
+    buffer.writeBytes(SPACE)
+    buffer.writeBytes(key)
+    buffer.writeBytes(SPACE)
+    buffer.writeBytes(ZERO)
+    buffer.writeBytes(SPACE)
+    buffer.writeBytes(ZERO)
+    buffer.writeBytes(SPACE)
+    buffer.writeBytes(value.capacity.toString.getBytes)
+    buffer.writeBytes(DELIMETER)
+    buffer.writeBytes(value)
+    buffer.writeBytes(DELIMETER)
+    buffer
   }
 }

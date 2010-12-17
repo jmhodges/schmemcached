@@ -3,22 +3,23 @@ package com.twitter.twemcached.protocol.text
 import scala.Function.tupled
 import com.twitter.twemcached.protocol._
 import org.jboss.netty.buffer.ChannelBuffer
-import org.jboss.netty.buffer.ChannelBuffers.wrappedBuffer
+import org.jboss.netty.buffer.ChannelBuffers.copiedBuffer
 import com.twitter.twemcached.util.ChannelBufferUtils._
 
 object ParseCommand extends Parser[Command] {
   import Parser.DIGITS
-  private[this] val NOREPLY = "noreply"
-  private[this] val SET = wrappedBuffer("set".getBytes)
-  private[this] val ADD = wrappedBuffer("add".getBytes)
-  private[this] val REPLACE = wrappedBuffer("replace".getBytes)
-  private[this] val APPEND = wrappedBuffer("append".getBytes)
-  private[this] val PREPEND = wrappedBuffer("prepend".getBytes)
-  private[this] val GET = wrappedBuffer("get".getBytes)
-  private[this] val GETS = wrappedBuffer("gets".getBytes)
-  private[this] val DELETE = wrappedBuffer("delete".getBytes)
-  private[this] val INCR = wrappedBuffer("incr".getBytes)
-  private[this] val DECR = wrappedBuffer("decr".getBytes)
+  private[this] val NOREPLY = copiedBuffer("noreply".getBytes)
+  private[this] val SET     = copiedBuffer("set"    .getBytes)
+  private[this] val ADD     = copiedBuffer("add"    .getBytes)
+  private[this] val REPLACE = copiedBuffer("replace".getBytes)
+  private[this] val APPEND  = copiedBuffer("append" .getBytes)
+  private[this] val PREPEND = copiedBuffer("prepend".getBytes)
+  private[this] val GET     = copiedBuffer("get"    .getBytes)
+  private[this] val GETS    = copiedBuffer("gets"   .getBytes)
+  private[this] val DELETE  = copiedBuffer("delete" .getBytes)
+  private[this] val INCR    = copiedBuffer("incr"   .getBytes)
+  private[this] val DECR    = copiedBuffer("decr"   .getBytes)
+
   private[this] val storageCommands = collection.Set(
     SET, ADD, REPLACE, APPEND, PREPEND)
 
