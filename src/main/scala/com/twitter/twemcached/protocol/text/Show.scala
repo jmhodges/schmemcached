@@ -31,7 +31,6 @@ object Show {
   private[this] val CLIENT_ERROR  = copiedBuffer("CLIENT_ERROR".getBytes, DELIMETER)
   private[this] val SERVER_ERROR  = copiedBuffer("SERVER_ERROR".getBytes, DELIMETER)
 
-  val three = 7.toString.getBytes
   def apply(response: Response) = {
     response match {
       case Stored         => STORED
@@ -46,7 +45,7 @@ object Show {
           buffer.writeBytes(SPACE)
           buffer.writeBytes(ZERO)
           buffer.writeBytes(SPACE)
-          buffer.writeBytes(three)
+          buffer.writeBytes(value.capacity.toString.getBytes)
           buffer.writeBytes(DELIMETER)
           value.resetReaderIndex()
           buffer.writeBytes(value)

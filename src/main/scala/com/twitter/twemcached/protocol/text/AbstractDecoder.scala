@@ -4,6 +4,7 @@ import com.twitter.twemcached.protocol.ClientError
 import org.jboss.netty.handler.codec.frame.FrameDecoder
 import org.jboss.netty.buffer.{ChannelBuffers, ChannelBufferIndexFinder, ChannelBuffer}
 import org.jboss.netty.channel._
+import org.jboss.netty.util.CharsetUtil
 
 abstract class AbstractDecoder[A] extends FrameDecoder {
   private[this] val DELIMETER = ChannelBuffers.wrappedBuffer("\r\n".getBytes)
@@ -14,6 +15,7 @@ abstract class AbstractDecoder[A] extends FrameDecoder {
   }
 
   override def exceptionCaught(ctx: ChannelHandlerContext, e: ExceptionEvent) {
+    e.getCause.printStackTrace()
     start()
     super.exceptionCaught(ctx, e)
   }
