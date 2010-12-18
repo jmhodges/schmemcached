@@ -5,6 +5,7 @@ import com.twitter.util.StateMachine
 import com.twitter.twemcached.protocol.Command
 import org.jboss.netty.buffer.ChannelBuffer
 import com.twitter.twemcached.protocol.text.{Show, AbstractDecoder, ParseCommand}
+import org.jboss.netty.util.CharsetUtil
 
 class Decoder extends AbstractDecoder[Command] with StateMachine {
   case class AwaitingCommand() extends State

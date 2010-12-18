@@ -3,6 +3,7 @@ package com.twitter.twemcached.protocol
 import text.Parser
 import org.jboss.netty.buffer.ChannelBuffer
 import com.twitter.twemcached.util.ChannelBufferUtils._
+import org.jboss.netty.util.CharsetUtil
 
 object ParseResponse extends Parser[Response] {
   import Parser.DIGITS
