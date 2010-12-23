@@ -11,7 +11,7 @@ class AtomicMap[A, B](maps: Seq[mutable.Map[A, B]]) {
   private[this] val concurrencyLevel = maps.size
 
   def lock[C](key: A)(f: mutable.Map[A, B] => C) = {
-    val map = maps(key.hashCode % concurrencyLevel)
+    val map = maps((key.hashCode % concurrencyLevel).abs)
     f.synchronized {
       f(map)
     }
