@@ -7,6 +7,7 @@ import com.twitter.twemcached.protocol._
 import com.twitter.util.RandomSocket
 import com.twitter.twemcached.protocol.text.Memcached
 import com.twitter.finagle.service.Service
+import com.twitter.twemcached.util.ChannelBufferUtils._
 
 object InterpreterServiceSpec extends Specification {
   "InterpreterService" should {

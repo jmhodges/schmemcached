@@ -2,16 +2,24 @@ package com.twitter.twemcached
 
 import org.jboss.netty.channel.Channel
 import com.twitter.finagle.builder.ServerBuilder
-import com.twitter.util.MapMaker
 import org.jboss.netty.buffer.ChannelBuffer
 import protocol.text.Memcached
 import java.net.SocketAddress
-import java.util.logging.Logger
+import com.twitter.util.SynchronizedLruMap
+import util.AtomicMap
 
 class MemcachedServer(address: SocketAddress) {
-  private[this] val map = MapMaker[ChannelBuffer, ChannelBuffer](_.softValues)
-  private[this] val interpreter = new Interpreter(map)
-  private[this] val service = new InterpreterService(interpreter)
+  val concurrencyLevel = 16
+  val slots = 500000
+  val slotsPerLru = slots / concurrencyLevel
+  val maps = (0 until concurrencyLevel) map { i =>
+    new SynchronizedLruMap[ChannelBuffer, ChannelBuffer](slotsPerLru)
+  }
+
+  private[this] val service = {
+    val interpreter = new Interpreter(new AtomicMap(maps))
+    new InterpreterService(interpreter)
+  }
 
   private[this] val serverSpec =
     ServerBuilder()

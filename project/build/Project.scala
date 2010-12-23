@@ -3,7 +3,7 @@ import com.twitter.sbt._
 
 class Project(info: ProjectInfo)
   extends StandardProject(info)
-  with InlineDependencies
+  with AdhocInlines
 {
   override def managedStyle = ManagedStyle.Maven
   override def disableCrossPaths = true
@@ -21,8 +21,8 @@ class Project(info: ProjectInfo)
   override def filterScalaJars = false
 
   val netty = "org.jboss.netty" %  "netty" % "3.2.2.Final"
-  inline("com.twitter" % "finagle"  % "1.0.3"          )
-  inline("com.twitter" % "util"     % "1.2.8"          )
+  val finagle = "com.twitter" % "finagle"  % "1.0.9"
+  val util = "com.twitter" % "util"        % "1.3.3"
 
   override def distZipName = "%s.zip".format(name)
 
