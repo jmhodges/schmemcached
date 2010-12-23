@@ -12,10 +12,10 @@ object ClientSpec extends Specification {
   /**
    * Note: This test needs a real Memcached server running on 11211 to work!!
    */
-  "Client" should {
+  "ConnectedClient" should {
     "work" in {
       val service = ClientBuilder().hosts("localhost:11211").codec(Memcached).buildService[Command, Response]()
-      val client = new Client(service)
+      val client = Client(service)
 
       client.delete("foo")()
 
