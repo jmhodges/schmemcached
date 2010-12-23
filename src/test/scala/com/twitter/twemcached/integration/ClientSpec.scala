@@ -36,6 +36,14 @@ object ClientSpec extends Specification {
         )
       }
 
+      "append & prepend" in {
+        client.set("foo", "bar")()
+        client.append("foo", "rab")()
+        client.get("foo")().get.toString(CharsetUtil.UTF_8) mustEqual "barrab"
+        client.prepend("foo", "rab")()
+        client.get("foo")().get.toString(CharsetUtil.UTF_8) mustEqual "rabbarrab"
+      }
+
       "incr & decr" in {
         client.set("foo", "")()
         client.incr("foo")()    mustEqual 1
