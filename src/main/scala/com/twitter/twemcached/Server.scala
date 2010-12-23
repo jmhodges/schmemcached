@@ -8,7 +8,7 @@ import java.net.SocketAddress
 import com.twitter.util.SynchronizedLruMap
 import util.AtomicMap
 
-class MemcachedServer(address: SocketAddress) {
+class Server(address: SocketAddress) {
   val concurrencyLevel = 16
   val slots = 500000
   val slotsPerLru = slots / concurrencyLevel

@@ -14,6 +14,9 @@ object ChannelBufferUtils {
   implicit def stringToChannelBuffer(string: String) =
     ChannelBuffers.wrappedBuffer(string.getBytes)
 
+  implicit def seqOfStringToSeqOfChannelBuffer(strings: Seq[String]) =
+    strings.map { string => ChannelBuffers.wrappedBuffer(string.getBytes) }
+
   implicit def stringToByteArray(string: String) =
     string.getBytes
 }

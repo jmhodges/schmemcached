@@ -1,7 +1,7 @@
 package com.twitter.twemcached.integration
 
 import org.specs.Specification
-import com.twitter.twemcached.MemcachedServer
+import com.twitter.twemcached.Server
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.twemcached.protocol._
 import org.jboss.netty.buffer.ChannelBuffers
@@ -14,12 +14,12 @@ import com.twitter.twemcached.util.ChannelBufferUtils._
 
 object InterpreterServiceSpec extends Specification {
   "InterpreterService" should {
-    var server: MemcachedServer = null
+    var server: Server = null
     var client: Service[Command, Response] = null
 
     doBefore {
       val address = RandomSocket()
-      server = new MemcachedServer(address)
+      server = new Server(address)
       server.start()
       client = ClientBuilder()
         .hosts("localhost:" + address.getPort)

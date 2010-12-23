@@ -16,7 +16,11 @@ class Decoder extends AbstractDecoder[Response] with StateMachine {
     state match {
       case AwaitingResponse() =>
         decodeLine(buffer, ParseResponse.needsData(_)) { tokens =>
-          ParseResponse(tokens)
+          if (ParseResponse.isEnd(tokens)) {
+            ParseResponse.parseValues(Seq())            
+          } else {
+            ParseResponse(tokens)
+          }
         }
       case AwaitingData(valuesSoFar, tokens, bytesNeeded) =>
         decodeData(bytesNeeded, buffer) { data =>

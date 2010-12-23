@@ -36,6 +36,10 @@ object Show {
       case Stored         => STORED
       case NotStored      => NOT_STORED
       case Deleted        => DELETED
+      case Number(value)  =>
+        val buffer = ChannelBuffers.dynamicBuffer(10)
+        buffer.writeBytes(value.toString.getBytes)
+        buffer
       case Values(values) =>
         val buffer = ChannelBuffers.dynamicBuffer(100 * values.size)
         val shown = values map { case Value(key, value) =>
@@ -85,14 +89,20 @@ object Show {
         val buffer = ChannelBuffers.dynamicBuffer(50)
         buffer.writeBytes(INCR)
         buffer.writeBytes(SPACE)
+        buffer.writeBytes(key)
+        buffer.writeBytes(SPACE)
         buffer.writeBytes(amount.toString.getBytes)
+        buffer.writeBytes(SPACE)
         buffer.writeBytes(DELIMETER)
         buffer
       case Decr(key, amount) =>
         val buffer = ChannelBuffers.dynamicBuffer(30)
         buffer.writeBytes(DECR)
         buffer.writeBytes(SPACE)
+        buffer.writeBytes(key)
+        buffer.writeBytes(SPACE)
         buffer.writeBytes(amount.toString.getBytes)
+        buffer.writeBytes(SPACE)
         buffer.writeBytes(DELIMETER)
         buffer
       case Delete(key) =>

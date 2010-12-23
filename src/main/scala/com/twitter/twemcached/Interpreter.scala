@@ -76,22 +76,26 @@ class Interpreter(map: AtomicMap[ChannelBuffer, ChannelBuffer]) {
           if (data.remove(key).isDefined)
             Deleted
           else
-            NotStored
+            NotFound
         }
-      case Incr(key, value) =>
+      case Incr(key, delta) =>
         map.lock(key) { data =>
           val existing = data.get(key)
           if (existing.isDefined) {
-            data(key) = {
-              val existingString = existing.get.toString(CharsetUtil.US_ASCII)
-              if (existingString.matches(DIGITS))
-                (existingString.toInt + value).toString
-              else
-                value.toString
-            }
-            Stored
+            val existingString = existing.get.toString(CharsetUtil.US_ASCII)
+            if (!existingString.isEmpty && !existingString.matches(DIGITS))
+              throw new ClientError("cannot increment or decrement non-numeric value")
+
+            val existingValue =
+              if (existingString.isEmpty) 0
+              else existingString.toInt
+
+            val result = existingValue + delta
+            data(key) = result.toString
+
+            Number(result)
           } else {
-            NotStored
+            NotFound
           }
         }
       case Decr(key, value) =>

@@ -13,6 +13,7 @@ object ParseResponse extends Parser[Response] {
   }
   private[this] val VALUE      = "VALUE": ChannelBuffer
   private[this] val STORED     = "STORED": ChannelBuffer
+  private[this] val NOT_FOUND  = "NOT_FOUND": ChannelBuffer
   private[this] val NOT_STORED = "NOT_STORED": ChannelBuffer
   private[this] val DELETED    = "DELETED": ChannelBuffer
   private[this] val END        = "END": ChannelBuffer
@@ -31,9 +32,11 @@ object ParseResponse extends Parser[Response] {
 
   def apply(tokens: Seq[ChannelBuffer]) = {
     tokens.head match {
+      case NOT_FOUND  => NotFound
       case STORED     => Stored
       case NOT_STORED => NotStored
       case DELETED    => Deleted
+      case ds         => Number(ds.toInt)
     }
   }
 
