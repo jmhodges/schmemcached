@@ -6,6 +6,8 @@ import com.twitter.schmemcached.util.ChannelBufferUtils._
 import com.twitter.util.Future
 import org.jboss.netty.util.CharsetUtil
 import org.jboss.netty.buffer.ChannelBuffer
+import java.util.TreeMap
+import scala.collection.JavaConversions._
 
 object Client {
   def apply(services: Seq[service.Client[Command, Response]]): Client = {
@@ -51,12 +53,14 @@ protected class ConnectedClient(underlying: service.Client[Command, Response]) e
     }
   }
 
-  def set(key: String, value: String) = underlying(Set(key, value))
-  def add(key: String, value: String) = underlying(Add(key, value))
-  def append(key: String, value: String) = underlying(Append(key, value))
+  def set(key: String, value: String)     = underlying(Set(key, value))
+  def add(key: String, value: String)     = underlying(Add(key, value))
+  def append(key: String, value: String)  = underlying(Append(key, value))
   def prepend(key: String, value: String) = underlying(Prepend(key, value))
-  def delete(key: String) = underlying(Delete(key))
-  def incr(key: String): Future[Int] = incr(key, 1)
+  def delete(key: String)                 = underlying(Delete(key))
+  def incr(key: String): Future[Int]      = incr(key, 1)
+  def decr(key: String): Future[Int]      = decr(key, 1)
+
   def incr(key: String, delta: Int): Future[Int] = {
     underlying(Incr(key, delta)) map {
       case Number(value) =>
@@ -64,7 +68,6 @@ protected class ConnectedClient(underlying: service.Client[Command, Response]) e
     }
   }
 
-  def decr(key: String): Future[Int] = decr(key, 1)
 
   def decr(key: String, delta: Int): Future[Int] = {
     underlying(Decr(key, delta)) map {
@@ -75,6 +78,16 @@ protected class ConnectedClient(underlying: service.Client[Command, Response]) e
 }
 
 protected class PartitionedClient(clients: Seq[Client], hash: String => Long) extends Client {
+  require(clients.size > 0, "At least one client must be provided")
+
+  private[this] val circle = {
+    val circle = new TreeMap[Long, Client]()
+    clients foreach { client =>
+      circle += hash(client.toString) -> client
+    }
+    circle
+  }
+
   def get(key: String)                    = idx(key).get(key)
   def get(keys: String*)                  = {
     val keysGroupedByClient = keys.groupBy(idx(_))
@@ -104,6 +117,8 @@ protected class PartitionedClient(clients: Seq[Client], hash: String => Long) ex
   def decr(key: String, delta: Int)       = idx(key).decr(key, delta)
 
   private[this] def idx(key: String) = {
-    clients((hash(key) % clients.size).toInt)
+    val entry = circle.ceilingEntry(hash(key))
+    if (entry eq null) entry.getValue
+    else circle.firstEntry.getValue
   }
 }
