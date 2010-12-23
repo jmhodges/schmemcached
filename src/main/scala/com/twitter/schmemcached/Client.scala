@@ -75,6 +75,8 @@ protected class ConnectedClient(underlying: service.Client[Command, Response]) e
         value
     }
   }
+
+  override def toString = hashCode.toString // FIXME this incompatible with Ketama
 }
 
 protected class PartitionedClient(clients: Seq[Client], hash: String => Long) extends Client {
@@ -118,7 +120,8 @@ protected class PartitionedClient(clients: Seq[Client], hash: String => Long) ex
 
   private[this] def idx(key: String) = {
     val entry = circle.ceilingEntry(hash(key))
-    if (entry eq null) entry.getValue
+    val client = if (entry ne null) entry.getValue
     else circle.firstEntry.getValue
+    client
   }
 }

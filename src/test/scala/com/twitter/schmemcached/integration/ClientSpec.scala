@@ -13,8 +13,11 @@ object ClientSpec extends Specification {
    * Note: This test needs a real Memcached server running on 11211 to work!!
    */
   "ConnectedClient" should {
-    "work" in {
-      val service = ClientBuilder().hosts("localhost:11211").codec(Memcached).buildService[Command, Response]()
+    "simple client" in {
+      val service = ClientBuilder()
+        .hosts("localhost:11211")
+        .codec(Memcached)
+        .buildService[Command, Response]()
       val client = Client(service)
 
       client.delete("foo")()
@@ -49,6 +52,29 @@ object ClientSpec extends Specification {
         client.incr("foo")()    mustEqual 1
         client.incr("foo", 2)() mustEqual 3
         client.decr("foo")()    mustEqual 2
+      }
+    }
+
+    "partitioned client" in {
+      val service1 = ClientBuilder()
+        .name("service1")
+        .hosts("localhost:11211")
+        .codec(Memcached)
+        .buildService[Command, Response]()
+      val service2 = ClientBuilder()
+        .name("service2")
+        .hosts("localhost:11212")
+        .codec(Memcached)
+        .buildService[Command, Response]()
+      val client = Client(Seq(service1, service2))
+
+      client.delete("foo")()
+
+
+      "doesn't blow up" in {
+        client.get("foo")() mustEqual None
+        client.set("foo", "bar")()
+        client.get("foo")().get.toString(CharsetUtil.UTF_8) mustEqual "bar"
       }
     }
   }
