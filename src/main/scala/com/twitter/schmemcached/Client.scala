@@ -8,8 +8,16 @@ import org.jboss.netty.util.CharsetUtil
 import org.jboss.netty.buffer.ChannelBuffer
 import java.util.TreeMap
 import scala.collection.JavaConversions._
+import com.twitter.finagle.builder.ClientBuilder
+import text.Memcached
 
 object Client {
+  def apply(host: String): Client = Client(
+    ClientBuilder()
+      .hosts(host)
+      .codec(Memcached)
+      .buildService[Command, Response]())
+
   def apply(services: Seq[service.Client[Command, Response]]): Client = {
     new PartitionedClient(services.map(apply(_)), _.hashCode)
   }
