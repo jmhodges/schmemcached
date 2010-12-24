@@ -87,7 +87,7 @@ protected class ConnectedClient(underlying: service.Client[Command, Response]) e
   override def toString = hashCode.toString // FIXME this incompatible with Ketama
 }
 
-protected class PartitionedClient(clients: Seq[Client], hash: String => Long) extends Client {
+class PartitionedClient(clients: Seq[Client], hash: String => Long) extends Client {
   require(clients.size > 0, "At least one client must be provided")
 
   private[this] val circle = {
